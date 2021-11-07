@@ -1,6 +1,6 @@
 from poke_env.player.player import Player
 
-def Model(Player):
+def Agent(Player):
 
     def __init__(self):
         super.__init__(self)
