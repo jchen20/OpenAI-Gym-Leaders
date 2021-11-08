@@ -1,5 +1,7 @@
 from poke_env.player.env_player import Gen8EnvSinglePlayer
-from AgentTemplate import Model
+from poke_env.player.random_player import RandomPlayer
+from agent_template import Agent
+import numpy as np
 
 class SimpleRLPlayer(Gen8EnvSinglePlayer):
     def embed_battle(self, battle):
@@ -37,20 +39,21 @@ class SimpleRLPlayer(Gen8EnvSinglePlayer):
 
 
 def main():
-    env_player = SimpleRLPlayer(battle_format="gen8randombattle")
+    env = SimpleRLPlayer(battle_format="gen8randombattle")
 
-    # This call will finished eventual unfinshed battles before returning
+    opponet = RandomPlayer(battle_format="gen8randombattle")
+    model = Agent()
+    num_episodes = 100
+    env.reset()
 
-    opponent = RandomPlayer(battle_format="gen8randombattle")
-    model = Model()
+    for i in range(num_episodes):
 
-    
-    env_player.play_against(
-        env_algorithm=model.training,
-        opponent=opponent,
-        env_algorithm_kwargs={},
-    )
-
+        # opponet2 = Agent.copy()
+        env.play_against(
+            env_algorithm=model.training,
+            opponent=opponet,
+            env_algorithm_kwargs={}
+        )
 
 
 

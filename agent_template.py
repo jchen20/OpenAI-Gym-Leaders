@@ -1,21 +1,22 @@
 from poke_env.player.player import Player
+import random
 
-def Agent(Player):
-
-    def __init__(self):
-        super.__init__(self)
+class Agent(Player):
 
     def training(self, env):
         done = False
+        rews = []
+        acts = []
         while not done:
-            act = self.choose_move(env.current_battle)
-            env.step(act)
-
-
-
-
+            act = random.choice(env.action_space)
+            _, rew, done, _ =  env.step(act)
+            print(rew)
+            rews.append(rew)
+            acts.append(act)
+        
+        #Do weight update here
 
     def choose_move(self, battle):
         moves = battle.available_moves
-        return moves[0]
+        return random.choice(moves)
         
