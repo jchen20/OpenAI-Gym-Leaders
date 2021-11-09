@@ -1,9 +1,11 @@
+import copy
+import numpy as np
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
-from agent_template import Agent
-import numpy as np
+from dqn_agent import DQNAgent
 
-class SimpleRLPlayer(Gen8EnvSinglePlayer):
+
+class RLEnvPlayer(Gen8EnvSinglePlayer):
     def embed_battle(self, battle):
         # -1 indicates that the move does not have a base power
         # or is not available
@@ -37,29 +39,22 @@ class SimpleRLPlayer(Gen8EnvSinglePlayer):
         )
 
 
-
 def main():
-    env = SimpleRLPlayer(battle_format="gen8randombattle")
-
-    opponet = RandomPlayer(battle_format="gen8randombattle")
-    model = Agent()
-    num_episodes = 100
-    env.reset()
-
+    env = RLEnvPlayer(battle_format="gen8randombattle")
+    player = DQNAgent(10, len(env.action_space))
+    player.set_embed_battle(env.embed_battle)
+    opponent = RandomPlayer()
+    
+    num_episodes = 2
     for i in range(num_episodes):
-
-        # opponet2 = Agent.copy()
+        # Uncomment below for self play
+        # opponent = copy.deepcopy(player)
+        print(f'Training episode {i}')
         env.play_against(
-            env_algorithm=model.training,
-            opponent=opponet,
-            env_algorithm_kwargs={}
+            env_algorithm=player.train_one_episode,
+            opponent=opponent
         )
-
-
-
-
-
-
+    player.battle_against(opponent, n_battles=5)
 
 
 if __name__ == '__main__':
