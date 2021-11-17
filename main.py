@@ -38,7 +38,8 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             victory_value=30,
         )
 
-
+NB_TRAINING_STEPS = 10000
+NB_EVALUATION_EPISODES = 100
 def main():
     env = RLEnvPlayer(battle_format="gen8randombattle")
     player = DQNAgent(10, len(env.action_space))
