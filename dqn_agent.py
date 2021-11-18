@@ -2,7 +2,7 @@ from collections import deque
 import random
 import torch
 import torch.nn as nn
-from poke_env.player.player import Player
+from poke_env.player.player import Player, BattleOrder
 
 
 class ReplayMemory(object):
@@ -41,8 +41,9 @@ class DQN(nn.Module):
 
 
 class DQNAgent(Player):
-    def __init__(self, state_size, action_space, batch_size=128, gamma=0.99):
+    def __init__(self, env, state_size, action_space, batch_size=128, gamma=0.99):
         super().__init__()
+        self.env = env
         self.model = DQN(state_size, action_space)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001, weight_decay=1e-4)
         self.memory = ReplayMemory(10000)
@@ -55,18 +56,37 @@ class DQNAgent(Player):
         
     # double check this function
     def _train_one_step(self):
+        # batch = self.memory.sample(self.batch_size)
+        # for state, action, next_state, rwd, terminal in batch:
+        #     self.optimizer.zero_grad()
+        #     with torch.set_grad_enabled(True):
+        #         state = torch.tensor([state]).float().to(self.device)
+        #         q_values = self.model(state)
+        #         target_q_values = q_values
+        #         # double check this
+        #         if terminal:
+        #             target_q_values[0][action] = rwd
+        #         else:
+        #             target_q_values[0][action] = rwd + self.gamma * torch.max(torch.tensor([next_state]).float().to(self.device)).numpy()
+        #         loss = torch.sum((q_values - target_q_values) ** 2)
+        #         loss.backward()
+        #         self.optimizer.step()
         batch = self.memory.sample(self.batch_size)
         for state, action, next_state, rwd, terminal in batch:
+            print("another batch", random.random())
             self.optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 state = torch.tensor([state]).float().to(self.device)
                 q_values = self.model(state)
-                target_q_values = q_values
-                # double check this
+                target_q_values = q_values.detach()  # copies
+                # double check this // George: this should be correct now
                 if terminal:
-                    target_q_values[0][action] = rwd
+                    target_q_values[0, action] = rwd
                 else:
-                    target_q_values[0][action] = rwd + self.gamma * torch.max(torch.tensor([next_state]).float().to(self.device)).numpy()
+                    next_state = torch.tensor(
+                        [next_state]).float().to(self.device)
+                    target_q_values[0, action] = rwd + self.gamma * torch.max(
+                        self.model(next_state)).detach()
                 loss = torch.sum((q_values - target_q_values) ** 2)
                 loss.backward()
                 self.optimizer.step()
@@ -93,12 +113,17 @@ class DQNAgent(Player):
         self.embed_battle = embed_battle
         
     def _best_action(self, state):
+        print("bestest action")
         state = torch.tensor([state]).float().to(self.device)
         q_values = self.model(state)
         action = torch.argmax(q_values).numpy()
         return action
         
     def choose_move(self, battle):
+        print("Choose a move")
         state = self.embed_battle(battle)
-        return self._best_action(state)
+        action = self._best_action(state)
+        # move_arr = self.get_move_array(battle)
+        # avail = battle.available_moves
+        return self.env._action_to_
         

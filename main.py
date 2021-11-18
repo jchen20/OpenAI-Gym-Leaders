@@ -1,4 +1,5 @@
 import copy
+import asyncio
 import numpy as np
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
@@ -39,24 +40,29 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         )
 
 
-def main():
-    env = RLEnvPlayer(battle_format="gen8randombattle")
-    player = DQNAgent(10, len(env.action_space))
-    player.set_embed_battle(env.embed_battle)
-    opponent = RandomPlayer()
-    
-    num_episodes = 2
-    for i in range(num_episodes):
-        # Uncomment below for self play
-        # opponent = copy.deepcopy(player)
-        print(f'Training episode {i}')
-        env.play_against(
-            env_algorithm=player.train_one_episode,
-            opponent=opponent
-        )
-    player.battle_against(opponent, n_battles=5)
+async def main():
+    env_player = RLEnvPlayer(battle_format="gen8randombattle")
+    dqn = DQNAgent(10, len(env_player.action_space))
+    random_player = RandomPlayer(battle_format="gen8randombattle")
+
+
+    # dqn.set_embed_battle(env_player.embed_battle)
+    # opponent = RandomPlayer()
+    #
+    # num_episodes = 2
+    # for i in range(num_episodes):
+    #     # Uncomment below for self play
+    #     # opponent = copy.deepcopy(player)
+    #     print(f'Training episode {i}')
+    #     env.play_against(
+    #         env_algorithm=player.train_one_episode,
+    #         opponent=opponent
+    #     )
+    #
+    # await player.battle_against(opponent, n_battles=5)
+    # print(env.n_finished_battles)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.get_event_loop().run_until_complete(main())
 
