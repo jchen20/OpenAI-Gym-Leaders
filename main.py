@@ -39,28 +39,28 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
                     battle.opponent_active_pokemon.type_1,
                     battle.opponent_active_pokemon.type_2,
                 )
-    
+
         # We count how many pokemons have not fainted in each team
         remaining_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
         remaining_mon_opponent = (
             len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
         )
-        
+
         team_types = [t.value for t in battle.active_pokemon.types if t is not None]
         team_one_hot_types = one_hot(team_types, 18)
-    
+
         opponent_types = [t.value for t in battle.opponent_active_pokemon.types if t is not None]
         opponent_one_hot_types = one_hot(opponent_types, 18)
-        
+
         moves_categories -= 1
         category_matrix = np.zeros((4, 3))
         category_matrix[np.arange(4), moves_categories] = 1
-        
+
         status_matrix = np.zeros((4, 7))
         for i, status_type in enumerate(moves_status):
             if status_type != 0:
                 status_matrix[i, status_type - 1] = 1
-        
+
         team_stats = battle.active_pokemon.stats
         stats_array = np.zeros(5)
         stats_array[0] = team_stats['atk']
@@ -68,8 +68,8 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         stats_array[2] = team_stats['spa']
         stats_array[3] = team_stats['spd']
         stats_array[4] = team_stats['spe']
-    
-        
+
+
         # Final vector with 10 components
         return np.concatenate(
             [moves_base_power,
@@ -123,8 +123,10 @@ def main():
     # Initialize random player
     random_player = RandomPlayer(battle_format=bf)
 
-    num_episodes = 2
+    num_episodes = 10
     episodes = np.arange(1, num_episodes + 1)
+    agent_games_cum = np.zeros(num_episodes)
+    agent_wins_cum = np.zeros(num_episodes)
     agent_games = np.zeros(num_episodes)
     agent_wins = np.zeros(num_episodes)
 
@@ -144,19 +146,22 @@ def main():
         # )
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(battle_against_wrapper(dqn, random_player, 5))
+        loop.run_until_complete(battle_against_wrapper(dqn, random_player, 100))
 
         # Evaluate env_player
         # dqn.battle_against(random_player, n_battles=5)
         print(dqn.n_finished_battles)
         print(dqn.n_won_battles)
 
+        agent_games_cum[i] = dqn.n_finished_battles
+        agent_wins_cum[i] = dqn.n_won_battles
+
         if i == 0:
-            agent_games[i] = dqn.n_finished_battles
-            agent_wins[i] = dqn.n_won_battles
+            agent_games[i] = agent_games_cum[i]
+            agent_wins[i] = agent_wins_cum[i]
         else:
-            agent_games[i] = dqn.n_finished_battles - agent_games[i-1]
-            agent_wins[i] = dqn.n_won_battles - agent_wins[i-1]
+            agent_games[i] = agent_games_cum[i] - agent_games_cum[i-1]
+            agent_wins[i] = agent_wins_cum[i] - agent_wins_cum[i-1]
 
     print(agent_games)
     print(agent_wins)
@@ -164,7 +169,7 @@ def main():
     plt.figure()
     plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
     plt.xlabel("Episode")
-    plt.ylabel("Number of Wins (out of 5)")
+    plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
     # plt.legend()
     plt.show()
