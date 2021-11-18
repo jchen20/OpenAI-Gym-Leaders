@@ -30,11 +30,11 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(state_size, 128),
+            nn.Linear(state_size, 256),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(64, len_action_space),
+            nn.Linear(128, len_action_space),
         )
 
     def forward(self, x):
@@ -43,12 +43,12 @@ class DQN(nn.Module):
 
 
 class DQNAgent(Player):
-    def __init__(self, state_size, action_space, batch_size=16, gamma=0.99):
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99):
         super().__init__()
         self.model = DQN(state_size, action_space)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01,
                                           weight_decay=1e-4)
-        self.memory = ReplayMemory(100)
+        self.memory = ReplayMemory(200)
         self.batch_size = batch_size
         self.gamma = gamma
         self.embed_battle = None
@@ -89,9 +89,8 @@ class DQNAgent(Player):
             next_state, rwd, done, _ = env.step(action)
             self.memory.push((state, action, next_state, rwd, done))
             state = next_state
-            if ct % self.batch_size == 0:
+            if ct % (self.batch_size // 2) == 0:
                 self._train_one_step()
-
         # state = env.reset()
         # env.complete_current_battle()
 
@@ -175,7 +174,5 @@ class DQNAgent(Player):
     def choose_move(self, battle):
         state = self.embed_battle(battle)
         action = self._best_action(state)
-        # move_arr = self.get_move_array(battle)
-        # avail = battle.available_moves
         return self._action_to_move(action, battle)
 

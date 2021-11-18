@@ -10,6 +10,7 @@ from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
 
 from dqn_agent import DQNAgent
+from networking import custom_play_against, battle_against_wrapper, evaluate_model
 
 def one_hot(locations, size):
     vector = np.zeros(size)
@@ -93,9 +94,22 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             victory_value=30,
         )
 
-async def battle_against_wrapper(player, opponent, n_battles):
-    await player.battle_against(opponent, n_battles)
+# async def battle_against_wrapper(player, opponent, n_battles):
+#     await player.battle_against(opponent, n_battles)
 
+# async def train_wrapper(env, player, opponent):
+#     await asyncio.gather(
+#         player.send_challenges(opponent=to_id_str(opponent.username), n_challenges=1, to_wait=opponent.logged_in),
+#         opponent.accept_challenges(opponent=to_id_str(player.username), n_challenges=1),
+#         player.train_one_episode(env)
+#     )
+
+# async def train_and_evaluate_wrapper(env, player, opponent, n_eval_battles):
+#     await env.play_against(
+#         env_algorithm=player.train_one_episode,
+#         opponent=opponent
+#     )
+#     await player.battle_against(opponent, n_eval_battles)
 
 def main():
     start = time.time()
@@ -118,14 +132,18 @@ def main():
         print(f'Training episode {i}')
 
         # Train env_player
-        env_player.play_against(
+        custom_play_against(
+            env_player=env_player,
             env_algorithm=dqn.train_one_episode,
             opponent=random_player,
         )
 
         # Evaluate
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(battle_against_wrapper(dqn, random_player, n_battles=100))
+        evaluate_model(
+            player=dqn,
+            opponent=random_player,
+            n_battles=100
+        )
 
         print(dqn.n_finished_battles)
         print(dqn.n_won_battles)
@@ -150,7 +168,6 @@ def main():
 
 
 if __name__ == '__main__':
-    # asyncio.get_event_loop().run_until_complete(main())
     main()
 
 
