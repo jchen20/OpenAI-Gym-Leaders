@@ -46,9 +46,9 @@ class DQNAgent(Player):
     def __init__(self, state_size, action_space, batch_size=32, gamma=0.99):
         super().__init__()
         self.model = DQN(state_size, action_space)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01,
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001,
                                           weight_decay=1e-4)
-        self.memory = ReplayMemory(200)
+        self.memory = ReplayMemory(500)
         self.batch_size = batch_size
         self.gamma = gamma
         self.embed_battle = None
@@ -83,7 +83,7 @@ class DQNAgent(Player):
 
         ct = 0
         while not done:
-            print(ct)
+            # print(ct)
             ct += 1
             action = self._best_action(state)
             next_state, rwd, done, _ = env.step(action)
@@ -93,6 +93,21 @@ class DQNAgent(Player):
                 self._train_one_step()
         # state = env.reset()
         # env.complete_current_battle()
+    
+    def run_one_episode(self, env):
+        env.reset_battles()
+        done = False
+        state = env.reset()
+
+        ct = 0
+        while not done:
+            # print(ct)
+            ct += 1
+            action = self._best_action(state)
+            next_state, rwd, done, _ = env.step(action)
+            self.memory.push((state, action, next_state, rwd, done))
+            state = next_state
+        
 
     def set_embed_battle(self, embed_battle):
         self.embed_battle = embed_battle

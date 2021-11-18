@@ -107,6 +107,15 @@ def main():
     # Initialize random player
     random_player = RandomPlayer(battle_format=bf)
 
+    num_burn_in = 10
+    for i in range(num_burn_in):
+        print(f'Burn in episode {i}')
+        custom_play_against(
+            env_player=env_player,
+            env_algorithm=dqn.run_one_episode,
+            opponent=random_player,
+        )
+
     num_episodes = 10
     episodes = np.arange(1, num_episodes + 1)
     agent_games_cum = np.zeros(num_episodes)
