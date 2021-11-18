@@ -12,6 +12,7 @@ from poke_env.player.player import Player
 from poke_env.player.random_player import RandomPlayer
 
 
+
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         # If the player can attack, it will
