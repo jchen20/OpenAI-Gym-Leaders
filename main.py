@@ -3,6 +3,8 @@ import asyncio
 import numpy as np
 import time
 
+import matplotlib.pyplot as plt
+
 from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
@@ -74,6 +76,8 @@ def main():
     random_player = RandomPlayer(battle_format=bf)
 
     num_episodes = 2
+    episodes = np.arange(1, num_episodes + 1)
+    agent_games = np.zeros(num_episodes)
     agent_wins = np.zeros(num_episodes)
 
     for i in range(num_episodes):
@@ -85,25 +89,38 @@ def main():
             opponent=random_player,
         )
 
-        env_player.play_against(
-            env_algorithm=evaluate,
-            opponent=random_player,
-            env_algorithm_kwargs={"player": dqn}
-        )
+        # env_player.play_against(
+        #     env_algorithm=evaluate,
+        #     opponent=random_player,
+        #     env_algorithm_kwargs={"player": dqn}
+        # )
 
-        # print('trying to instantiate loop')
-        # loop = asyncio.get_event_loop()
-        # print('loop instantiated')
-        # loop.run_until_complete(battle_against_wrapper(dqn, random_player, 5))
-        # print('playing battles')
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(battle_against_wrapper(dqn, random_player, 5))
 
         # Evaluate env_player
         # dqn.battle_against(random_player, n_battles=5)
         print(dqn.n_finished_battles)
         print(dqn.n_won_battles)
-        agent_wins[i] = dqn.n_won_battles
 
+        if i == 0:
+            agent_games[i] = dqn.n_finished_battles
+            agent_wins[i] = dqn.n_won_battles
+        else:
+            agent_games[i] = dqn.n_finished_battles - agent_games[i-1]
+            agent_wins[i] = dqn.n_won_battles - agent_wins[i-1]
+
+    print(agent_games)
     print(agent_wins)
+
+    plt.figure()
+    plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
+    plt.xlabel("Episode")
+    plt.ylabel("Number of Wins (out of 5)")
+    plt.title("Agent Wins Per Episode")
+    # plt.legend()
+    plt.show()
+
 
 if __name__ == '__main__':
     # asyncio.get_event_loop().run_until_complete(main())
