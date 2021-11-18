@@ -1,7 +1,14 @@
 import copy
+import asyncio
 import numpy as np
+import time
+
+import matplotlib.pyplot as plt
+
+from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
+
 from dqn_agent import DQNAgent
 
 def one_hot(locations, size):
@@ -86,25 +93,87 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             victory_value=30,
         )
 
+async def battle_against_wrapper(player, opponent, n_battles):
+    await player.battle_against(opponent, n_battles)
+    # await player.send_challenges(
+    #     to_id_str(opponent.username), n_battles, to_wait=opponent.logged_in
+    # )
+    # await opponent.accept_challenges(to_id_str(player.username), n_battles)
+
+def evaluate(env, player):
+    env.reset_battles()
+    done = False
+    state = env.reset()
+
+    while not done:
+        action = player._best_action(state)
+        next_state, rwd, done, _ = env.step(action)
+        state = next_state
+
 
 def main():
-    env = RLEnvPlayer(battle_format="gen8randombattle")
-    player = DQNAgent(10, len(env.action_space))
-    player.set_embed_battle(env.embed_battle)
-    opponent = RandomPlayer()
-    
+    start = time.time()
+    bf = "gen8randombattle"
+
+    # Initialize agent
+    env_player = RLEnvPlayer(battle_format="gen8randombattle")
+    dqn = DQNAgent(10, len(env_player.action_space))
+    dqn.set_embed_battle(env_player.embed_battle)
+
+    # Initialize random player
+    random_player = RandomPlayer(battle_format=bf)
+
     num_episodes = 2
+    episodes = np.arange(1, num_episodes + 1)
+    agent_games = np.zeros(num_episodes)
+    agent_wins = np.zeros(num_episodes)
+
     for i in range(num_episodes):
-        # Uncomment below for self play
-        # opponent = copy.deepcopy(player)
         print(f'Training episode {i}')
-        env.play_against(
-            env_algorithm=player.train_one_episode,
-            opponent=opponent
+
+        # Train env_player
+        env_player.play_against(
+            env_algorithm=dqn.train_one_episode,
+            opponent=random_player,
         )
-    player.battle_against(opponent, n_battles=5)
+
+        # env_player.play_against(
+        #     env_algorithm=evaluate,
+        #     opponent=random_player,
+        #     env_algorithm_kwargs={"player": dqn}
+        # )
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(battle_against_wrapper(dqn, random_player, 5))
+
+        # Evaluate env_player
+        # dqn.battle_against(random_player, n_battles=5)
+        print(dqn.n_finished_battles)
+        print(dqn.n_won_battles)
+
+        if i == 0:
+            agent_games[i] = dqn.n_finished_battles
+            agent_wins[i] = dqn.n_won_battles
+        else:
+            agent_games[i] = dqn.n_finished_battles - agent_games[i-1]
+            agent_wins[i] = dqn.n_won_battles - agent_wins[i-1]
+
+    print(agent_games)
+    print(agent_wins)
+
+    plt.figure()
+    plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
+    plt.xlabel("Episode")
+    plt.ylabel("Number of Wins (out of 5)")
+    plt.title("Agent Wins Per Episode")
+    # plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':
+    # asyncio.get_event_loop().run_until_complete(main())
     main()
+
+
+
 
