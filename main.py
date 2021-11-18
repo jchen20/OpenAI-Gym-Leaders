@@ -117,7 +117,7 @@ def main():
 
     # Initialize agent
     env_player = RLEnvPlayer(battle_format="gen8randombattle")
-    dqn = DQNAgent(10, len(env_player.action_space))
+    dqn = DQNAgent(97, len(env_player.action_space))
     dqn.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
