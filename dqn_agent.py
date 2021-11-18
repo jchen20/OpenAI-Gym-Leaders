@@ -30,11 +30,11 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(state_size, 256),
+            nn.Linear(state_size, 1024),
             nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Linear(1024, 256),
             nn.ReLU(),
-            nn.Linear(128, len_action_space),
+            nn.Linear(256, len_action_space),
         )
 
     def forward(self, x):
@@ -68,10 +68,10 @@ class DQNAgent(Player):
             terminal = torch.tensor(terminal, dtype=bool).to(self.device)
             state = torch.tensor(state, dtype=torch.float32).to(self.device)
             q_values = self.model(state)
-            target_q_values = q_values.detach() # copies
-            target_q_values[:, action] = rwd
+            target_q_values = torch.clone(q_values).detach() # copies
+            target_q_values[range(len(q_values)), action] = rwd
             valid_next_state = torch.tensor(next_state, dtype=torch.float32).to(self.device)[~terminal]
-            target_q_values[~terminal, action[~terminal]] += self.gamma * torch.max(self.model(valid_next_state)).detach()
+            target_q_values[~terminal, action[~terminal]] += self.gamma * torch.max(self.model(valid_next_state), dim=1)[0].detach()
             loss = torch.sum((q_values - target_q_values) ** 2)
             loss.backward()
             self.optimizer.step()
@@ -89,7 +89,7 @@ class DQNAgent(Player):
             next_state, rwd, done, _ = env.step(action)
             self.memory.push((state, action, next_state, rwd, done))
             state = next_state
-            if ct % (self.batch_size // 2) == 0:
+            if ct % (self.batch_size // 4) == 0:
                 self._train_one_step()
         # state = env.reset()
         # env.complete_current_battle()

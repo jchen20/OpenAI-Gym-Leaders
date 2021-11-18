@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
+from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 
 from dqn_agent import DQNAgent
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
@@ -106,6 +107,8 @@ def main():
 
     # Initialize random player
     random_player = RandomPlayer(battle_format=bf)
+    max_dmg_player = MaxBasePowerPlayer(battle_format=bf)
+    heur_player = SimpleHeuristicsPlayer(battle_format=bf)
 
     num_burn_in = 10
     for i in range(num_burn_in):
@@ -113,51 +116,71 @@ def main():
         custom_play_against(
             env_player=env_player,
             env_algorithm=dqn.run_one_episode,
-            opponent=random_player,
+            opponent=heur_player,
         )
 
     num_episodes = 10
+    n_eval_battles = 20
     episodes = np.arange(1, num_episodes + 1)
-    agent_games_cum = np.zeros(num_episodes)
-    agent_wins_cum = np.zeros(num_episodes)
-    agent_games = np.zeros(num_episodes)
-    agent_wins = np.zeros(num_episodes)
+    agent_wins_cum = 0
+    agent_random_wins = np.zeros(num_episodes, dtype=int)
+    agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
+    agent_heur_wins = np.zeros(num_episodes, dtype=int)
 
     for i in range(num_episodes):
+        print('\n\n-------------------------')
         print(f'Training episode {i}')
 
         # Train env_player
         custom_play_against(
             env_player=env_player,
             env_algorithm=dqn.train_one_episode,
-            opponent=random_player,
+            opponent=heur_player,
         )
 
         # Evaluate
+
+        print('\nEvaluating against Random Player:')
         evaluate_model(
             player=dqn,
             opponent=random_player,
-            n_battles=100
+            n_battles=n_eval_battles
         )
-
-        print(dqn.n_finished_battles)
-        print(dqn.n_won_battles)
-
-        agent_games_cum[i] = dqn.n_finished_battles
-        agent_wins_cum[i] = dqn.n_won_battles
-
         if i == 0:
-            agent_games[i] = agent_games_cum[i]
-            agent_wins[i] = agent_wins_cum[i]
+            agent_random_wins[i] = dqn.n_won_battles
         else:
-            agent_games[i] = agent_games_cum[i] - agent_games_cum[i-1]
-            agent_wins[i] = agent_wins_cum[i] - agent_wins_cum[i-1]
+            agent_random_wins[i] = dqn.n_won_battles - agent_wins_cum
+        agent_wins_cum = dqn.n_won_battles
+        print(f'Wins: {agent_random_wins[i]} out of {n_eval_battles}')
 
-    print(agent_games)
-    print(agent_wins)
+        print('\nEvaluating against Max Damage Player:')
+        evaluate_model(
+            player=dqn,
+            opponent=max_dmg_player,
+            n_battles=n_eval_battles
+        )
+        agent_max_dmg_wins[i] = dqn.n_won_battles - agent_wins_cum
+        agent_wins_cum = dqn.n_won_battles
+        print(f'Wins: {agent_max_dmg_wins[i]} out of {n_eval_battles}')
+
+        print('\nEvaluating against Heuristic Player:')
+        evaluate_model(
+            player=dqn,
+            opponent=heur_player,
+            n_battles=n_eval_battles
+        )
+        agent_heur_wins[i] = dqn.n_won_battles - agent_wins_cum
+        agent_wins_cum = dqn.n_won_battles
+        print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
+
+    print(agent_random_wins)
+    print(agent_max_dmg_wins)
+    print(agent_heur_wins)
 
     plt.figure()
-    plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
+    plt.plot(episodes, agent_random_wins, '-b', label="Agent Wins against Random")
+    plt.plot(episodes, agent_max_dmg_wins, '-g', label="Agent Wins against Max Dmg")
+    plt.plot(episodes, agent_heur_wins, '-r', label="Agent Wins against Heuristic")
     plt.xlabel("Episode")
     plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
