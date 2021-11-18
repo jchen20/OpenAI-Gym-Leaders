@@ -69,7 +69,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         stats_array[2] = team_stats['spa']
         stats_array[3] = team_stats['spd']
         stats_array[4] = team_stats['spe']
-    
+        stats_array /= 100
         
         # Final vector with 10 components
         return np.concatenate(
@@ -94,22 +94,6 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             victory_value=30,
         )
 
-# async def battle_against_wrapper(player, opponent, n_battles):
-#     await player.battle_against(opponent, n_battles)
-
-# async def train_wrapper(env, player, opponent):
-#     await asyncio.gather(
-#         player.send_challenges(opponent=to_id_str(opponent.username), n_challenges=1, to_wait=opponent.logged_in),
-#         opponent.accept_challenges(opponent=to_id_str(player.username), n_challenges=1),
-#         player.train_one_episode(env)
-#     )
-
-# async def train_and_evaluate_wrapper(env, player, opponent, n_eval_battles):
-#     await env.play_against(
-#         env_algorithm=player.train_one_episode,
-#         opponent=opponent
-#     )
-#     await player.battle_against(opponent, n_eval_battles)
 
 def main():
     start = time.time()
