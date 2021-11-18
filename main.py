@@ -109,6 +109,8 @@ def main():
 
     num_episodes = 10
     episodes = np.arange(1, num_episodes + 1)
+    agent_games_cum = np.zeros(num_episodes)
+    agent_wins_cum = np.zeros(num_episodes)
     agent_games = np.zeros(num_episodes)
     agent_wins = np.zeros(num_episodes)
 
@@ -116,28 +118,34 @@ def main():
         print(f'Training episode {i}')
 
         # Train env_player
-        custom_play_against(
-            env_player=env_player,
+        env_player.play_against(
             env_algorithm=dqn.train_one_episode,
             opponent=random_player,
         )
 
-        # Evaluate
-        evaluate_model(
-            player=dqn,
-            opponent=random_player,
-            n_battles=100
-        )
+        # env_player.play_against(
+        #     env_algorithm=evaluate,
+        #     opponent=random_player,
+        #     env_algorithm_kwargs={"player": dqn}
+        # )
 
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(battle_against_wrapper(dqn, random_player, 100))
+
+        # Evaluate env_player
+        # dqn.battle_against(random_player, n_battles=5)
         print(dqn.n_finished_battles)
         print(dqn.n_won_battles)
 
+        agent_games_cum[i] = dqn.n_finished_battles
+        agent_wins_cum[i] = dqn.n_won_battles
+
         if i == 0:
-            agent_games[i] = dqn.n_finished_battles
-            agent_wins[i] = dqn.n_won_battles
+            agent_games[i] = agent_games_cum[i]
+            agent_wins[i] = agent_wins_cum[i]
         else:
-            agent_games[i] = dqn.n_finished_battles - agent_games[i-1]
-            agent_wins[i] = dqn.n_won_battles - agent_wins[i-1]
+            agent_games[i] = agent_games_cum[i] - agent_games_cum[i-1]
+            agent_wins[i] = agent_wins_cum[i] - agent_wins_cum[i-1]
 
     print(agent_games)
     print(agent_wins)
@@ -145,7 +153,7 @@ def main():
     plt.figure()
     plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
     plt.xlabel("Episode")
-    plt.ylabel("Number of Wins (out of 5)")
+    plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
     # plt.legend()
     plt.show()
