@@ -79,15 +79,13 @@ class DQNAgent(Player):
             with torch.set_grad_enabled(True):
                 state = torch.tensor([state]).float().to(self.device)
                 q_values = self.model(state)
-                target_q_values = q_values.detach()  # copies
+                target_q_values = q_values.detach() # copies
                 # double check this // George: this should be correct now
                 if terminal:
                     target_q_values[0, action] = rwd
                 else:
-                    next_state = torch.tensor(
-                        [next_state]).float().to(self.device)
-                    target_q_values[0, action] = rwd + self.gamma * torch.max(
-                        self.model(next_state)).detach()
+                    next_state = torch.tensor([next_state]).float().to(self.device)
+                    target_q_values[0, action] = rwd + self.gamma * torch.max(self.model(next_state)).detach()
                 loss = torch.sum((q_values - target_q_values) ** 2)
                 loss.backward()
                 self.optimizer.step()
