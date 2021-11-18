@@ -140,9 +140,6 @@ def main():
             n_battles=100
         )
 
-        print(dqn.n_finished_battles)
-        print(dqn.n_won_battles)
-
         agent_games_cum[i] = dqn.n_finished_battles
         agent_wins_cum[i] = dqn.n_won_battles
 
@@ -153,8 +150,7 @@ def main():
             agent_games[i] = agent_games_cum[i] - agent_games_cum[i-1]
             agent_wins[i] = agent_wins_cum[i] - agent_wins_cum[i-1]
 
-    print(agent_games)
-    print(agent_wins)
+        print(agent_wins[i])
 
     plt.figure()
     plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
