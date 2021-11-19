@@ -110,7 +110,7 @@ def main():
     max_dmg_player = MaxBasePowerPlayer(battle_format=bf)
     heur_player = SimpleHeuristicsPlayer(battle_format=bf)
 
-    num_burn_in = 10
+    num_burn_in = 100
     for i in range(num_burn_in):
         print(f'Burn in episode {i}')
         custom_play_against(

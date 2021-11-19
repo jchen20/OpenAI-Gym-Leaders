@@ -48,7 +48,7 @@ class DQNAgent(Player):
         self.model = DQN(state_size, action_space)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001,
                                           weight_decay=1e-4)
-        self.memory = ReplayMemory(500)
+        self.memory = ReplayMemory(5000)
         self.batch_size = batch_size
         self.gamma = gamma
         self.embed_battle = None
