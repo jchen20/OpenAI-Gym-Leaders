@@ -43,8 +43,8 @@ class DQN(nn.Module):
 
 
 class DQNAgent(Player):
-    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99):
-        super().__init__()
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.model = DQN(state_size, action_space)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001,
                                           weight_decay=1e-4)

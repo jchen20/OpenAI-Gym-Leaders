@@ -98,17 +98,28 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
 
 def main():
     start = time.time()
-    bf = "gen8randombattle"
+    bf = "gen8ou"
+
+    team_1 = """
+Goodra (M) @ Assault Vest
+Ability: Sap Sipper
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Dragon Pulse
+- Flamethrower
+- Sludge Wave
+- Thunderbolt"""
 
     # Initialize agent
-    env_player = RLEnvPlayer(battle_format=bf)
-    dqn = DQNAgent(97, len(env_player.action_space))
+    env_player = RLEnvPlayer(battle_format=bf, team=team_1)
+    dqn = DQNAgent(97, len(env_player.action_space), battle_format=bf, team=team_1)
     dqn.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
-    random_player = RandomPlayer(battle_format=bf)
-    max_dmg_player = MaxBasePowerPlayer(battle_format=bf)
-    heur_player = SimpleHeuristicsPlayer(battle_format=bf)
+    random_player = RandomPlayer(battle_format=bf, team=team_1)
+    max_dmg_player = MaxBasePowerPlayer(battle_format=bf, team=team_1)
+    heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=team_1)
 
     num_burn_in = 10
     for i in range(num_burn_in):
