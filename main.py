@@ -120,6 +120,7 @@ def main():
         )
 
     num_episodes = 10
+    training_per_episode = 100
     n_eval_battles = 20
     episodes = np.arange(1, num_episodes + 1)
     agent_wins_cum = 0
@@ -132,11 +133,17 @@ def main():
         print(f'Training episode {i}')
 
         # Train env_player
-        custom_play_against(
-            env_player=env_player,
-            env_algorithm=dqn.train_one_episode,
-            opponent=heur_player,
-        )
+        for j in range(training_per_episode):
+            custom_play_against(
+                env_player=env_player,
+                env_algorithm=dqn.train_one_episode,
+                opponent=max_dmg_player,
+            )
+            custom_play_against(
+                env_player=env_player,
+                env_algorithm=dqn.train_one_episode,
+                opponent=heur_player,
+            )
 
         # Evaluate
 
@@ -184,7 +191,7 @@ def main():
     plt.xlabel("Episode")
     plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
-    # plt.legend()
+    plt.legend()
     plt.show()
 
 

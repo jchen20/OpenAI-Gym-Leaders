@@ -47,7 +47,6 @@ def custom_play_against(
         :param env_algorithm_kwargs: Optional arguments to pass to the env_algorithm.
             Defaults to None.
         """
-
         async def launch_battles(player: EnvPlayer, opponent: Player):
             battles_coroutine = asyncio.gather(
                 player.send_challenges(
