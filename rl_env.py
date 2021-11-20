@@ -12,7 +12,7 @@ from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 from poke_env.environment.battle import AbstractBattle
 from poke_env.player.battle_order import BattleOrder
 
-from utils import one_hot
+from utils import get_valid_actions_mask, one_hot, player_action_to_move
 
 
 class RLEnvPlayer(Gen8EnvSinglePlayer):
@@ -39,7 +39,29 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
                 )
                 if move.type in battle.active_pokemon.types:
                     moves_dmg_multiplier[i] *= 1.5 # STAB
-    
+        
+        dynamax_moves_base_power = -np.ones(4, dtype=int)
+        dynamax_moves_dmg_multiplier = np.zeros(4)
+        dynamax_moves_accuracy = np.zeros(4)
+        dynamax_moves_categories = np.zeros(4, dtype=int)
+        dynamax_moves_status = np.zeros(4, dtype=int)
+        for i, move in enumerate(battle.available_moves):
+            move = move.dynamaxed
+            dynamax_moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
+            dynamax_moves_accuracy[i] = move.accuracy
+            dynamax_moves_categories[i] = move.category.value
+            if move.status:
+                dynamax_moves_status[i] = move.status.value
+            else:
+                dynamax_moves_status[i] = 0
+            if move.type:
+                dynamax_moves_dmg_multiplier[i] = move.type.damage_multiplier(
+                    battle.opponent_active_pokemon.type_1,
+                    battle.opponent_active_pokemon.type_2,
+                )
+                if move.type in battle.active_pokemon.types:
+                    dynamax_moves_dmg_multiplier[i] *= 1.5 # STAB
+
         # We count how many pokemons have not fainted in each team
         remaining_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
         remaining_mon_opponent = (
@@ -60,6 +82,15 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         for i, status_type in enumerate(moves_status):
             if status_type != 0:
                 status_matrix[i, status_type - 1] = 1
+
+        dynamax_moves_categories -= 1
+        dynamax_category_matrix = np.zeros((4, 3))
+        dynamax_category_matrix[np.arange(4), dynamax_moves_categories] = 1
+
+        dynamax_status_matrix = np.zeros((4, 7))
+        for i, status_type in enumerate(dynamax_moves_status):
+            if status_type != 0:
+                dynamax_status_matrix[i, status_type - 1] = 1
         
         curr_stats = battle.active_pokemon.stats
         curr_stats_array = np.zeros(5)
@@ -106,12 +137,17 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             switch_matrix[i, 7:25] += one_hot(pokemon_types, 18)
         
         # Final vector with many components
-        return np.concatenate([
+        state_vector = np.concatenate([
             moves_base_power,
             moves_dmg_multiplier,
             moves_accuracy,
             category_matrix.flatten(),
             status_matrix.flatten(),
+            dynamax_moves_base_power,
+            dynamax_moves_dmg_multiplier,
+            dynamax_moves_accuracy,
+            dynamax_category_matrix.flatten(),
+            dynamax_status_matrix.flatten(),
             curr_one_hot_types,
             [curr_level, curr_hp],
             curr_stats_array,
@@ -124,13 +160,15 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             [remaining_mon_team, remaining_mon_opponent],
             switch_matrix.flatten(),
         ])
+        
+        return state_vector, get_valid_actions_mask(battle)
 
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(
             battle,
             fainted_value=2,
             hp_value=1,
-            victory_value=30,
+            victory_value=4,
         )
     
     def choose_move(self, battle: AbstractBattle) -> BattleOrder:
@@ -140,4 +178,4 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         action = self._actions[battle].get()
         self.last_action = action
 
-        return self._action_to_move(action, battle)
+        return player_action_to_move(self, action, battle)

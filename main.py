@@ -15,52 +15,22 @@ from poke_env.player.battle_order import BattleOrder
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
-
+from utils import set_random_seed
+import teams
 
 def main():
+    set_random_seed(0)
+
     start = time.time()
     bf = "gen8ou"
-
-    team_2_pokemon = """
-Goodra (M) @ Assault Vest
-Ability: Sap Sipper
-EVs: 248 HP / 252 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Dragon Pulse
-- Flamethrower
-- Sludge Wave
-- Thunderbolt
-
-Sylveon (M) @ Leftovers
-Ability: Pixilate
-EVs: 248 HP / 244 Def / 16 SpD
-Calm Nature
-IVs: 0 Atk
-- Hyper Voice
-- Mystical Fire
-- Protect
-- Wish
-"""
-
-    team_1_pokemon = """
-Goodra (M) @ Assault Vest
-Ability: Sap Sipper
-EVs: 248 HP / 252 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Dragon Pulse
-- Flamethrower
-- Sludge Wave
-- Thunderbolt
-"""
+    # bf = 'gen8randombattle'
 
     # Initialize agent
-    team_used = team_2_pokemon
-    emb_dim = 250
+    team_used = teams.two_team_1_2
+    emb_dim = 302
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
-    dqn = DQNAgent(emb_dim, len(env_player.action_space), battle_format=bf, team=team_used)
+    dqn = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
     dqn.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
@@ -69,21 +39,22 @@ IVs: 0 Atk
     heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=team_used)
 
     num_burn_in = 20
+    run_one_episode = lambda x: dqn.train_one_episode(x, no_train=True)
     for i in range(num_burn_in):
         print(f'Burn in episode {i}')
         custom_play_against(
             env_player=env_player,
-            env_algorithm=dqn.run_one_episode,
+            env_algorithm=run_one_episode,
             opponent=heur_player,
         )
         custom_play_against(
             env_player=env_player,
-            env_algorithm=dqn.run_one_episode,
+            env_algorithm=run_one_episode,
             opponent=max_dmg_player,
         )
 
     num_episodes = 10
-    training_per_episode = 100
+    training_per_episode = 200
     n_eval_battles = 20
     episodes = np.arange(1, num_episodes + 1)
     agent_wins_cum = 0

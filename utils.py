@@ -1,27 +1,44 @@
 from poke_env.player.battle_order import ForfeitBattleOrder
 import numpy as np
+import torch
+import random
+
+from networking import battle_against_wrapper
+
+def one_hot(locations, size):
+    vector = np.zeros(size)
+    locations = np.array(locations) - 1
+    vector[locations] = 1
+    return vector
+
+def set_random_seed(sd):
+    random.seed(sd)
+    np.random.seed(sd)
+    torch.manual_seed(sd)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(sd)
+        torch.cuda.manual_seed_all(sd)
+
+        torch.backends.cudnn.enabled = False
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
 
 def player_action_to_move(player, action, battle):
-    """Converts actions to move orders.
+    """
+    NOTE: This is from poke-env, but fixed/simplified so that invalid z-move,
+    mega, etc. is gone.
+    
+    Converts actions to move orders.
     The conversion is done as follows:
     action = -1:
         The battle will be forfeited.
     0 <= action < 4:
         The actionth available move in battle.available_moves is executed.
     4 <= action < 8:
-        The action - 4th available move in battle.available_moves is executed, with
-        z-move.
-    8 <= action < 12:
-        The action - 8th available move in battle.available_moves is executed, with
-        mega-evolution.
-    8 <= action < 12:
-        The action - 8th available move in battle.available_moves is executed, with
-        mega-evolution.
-    12 <= action < 16:
-        The action - 12th available move in battle.available_moves is executed,
+        The action - 4th available move in battle.available_moves is executed,
         while dynamaxing.
-    16 <= action < 22
-        The action - 16th available switch in battle.available_switches is executed.
+    8 <= action < 14
+        The action - 8th available switch in battle.available_switches is executed.
     If the proposed action is illegal, a random legal move is performed.
     :param action: The action to convert.
     :type action: int
@@ -39,39 +56,31 @@ def player_action_to_move(player, action, battle):
     ):
         return player.create_order(battle.available_moves[action])
     elif (
-            not battle.force_switch
-            and battle.can_z_move
-            and battle.active_pokemon
-            and 0
-            <= action - 4
-            < len(battle.active_pokemon.available_z_moves)  # pyre-ignore
-    ):
-        return player.create_order(
-            battle.active_pokemon.available_z_moves[action - 4], z_move=True
-        )
-    elif (
-            battle.can_mega_evolve
-            and 0 <= action - 8 < len(battle.available_moves)
-            and not battle.force_switch
-    ):
-        return player.create_order(battle.available_moves[action - 8],
-                                    mega=True)
-    elif (
             battle.can_dynamax
-            and 0 <= action - 12 < len(battle.available_moves)
+            and 0 <= action - 4 < len(battle.available_moves)
             and not battle.force_switch
     ):
-        return player.create_order(battle.available_moves[action - 12],
+        return player.create_order(battle.available_moves[action - 4],
                                     dynamax=True)
-    elif 0 <= action - 16 < len(battle.available_switches):
-        return player.create_order(battle.available_switches[action - 16])
+    elif 0 <= action - 8 < len(battle.available_switches):
+        return player.create_order(battle.available_switches[action - 8])
     else:
         return player.choose_random_move(battle)
 
-def one_hot(locations, size):
-    vector = np.zeros(size)
-    locations = np.array(locations) - 1
-    vector[locations] = 1
-    return vector
+def convert_real_action_to_pokeenv_action(action):
+    if action < 4:
+        return action
+    else:
+        return action - 8
 
+def get_valid_actions_mask(battle):
+    mask = np.zeros(14)
+    if not battle.force_switch:
+        ell = len(battle.available_moves)
+        mask[0:ell] = 1
+        if battle.can_dynamax:
+            mask[4:4+ell] = 1
+    mask[8:8+len(battle.available_switches)] = 1
+
+    return mask
 
