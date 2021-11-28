@@ -109,7 +109,8 @@ IVs: 0 Atk
 - Dragon Pulse
 - Flamethrower
 - Sludge Wave
-- Thunderbolt"""
+- Thunderbolt
+"""
 
     # Initialize agent
     env_player = RLEnvPlayer(battle_format=bf, team=team_1)
