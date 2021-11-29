@@ -9,118 +9,52 @@ from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
 from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
+from poke_env.environment.battle import AbstractBattle
+from poke_env.player.battle_order import BattleOrder
 
+from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
-
-def one_hot(locations, size):
-    vector = np.zeros(size)
-    locations = np.array(locations) - 1
-    vector[locations] = 1
-    return vector
-
-class RLEnvPlayer(Gen8EnvSinglePlayer):
-    def embed_battle(self, battle):
-        # -1 indicates that the move does not have a base power
-        # or is not available
-        moves_base_power = -np.ones(4, dtype=int)
-        moves_dmg_multiplier = np.zeros(4)
-        moves_accuracy = np.zeros(4)
-        moves_categories = np.zeros(4, dtype=int)
-        moves_status = np.zeros(4, dtype=int)
-        for i, move in enumerate(battle.available_moves):
-            moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
-            moves_accuracy[i] = move.accuracy
-            moves_categories[i] = move.category.value
-            if move.status:
-                moves_status[i] = move.status.value
-            else:
-                moves_status[i] = 0
-            if move.type:
-                moves_dmg_multiplier[i] = move.type.damage_multiplier(
-                    battle.opponent_active_pokemon.type_1,
-                    battle.opponent_active_pokemon.type_2,
-                )
-    
-        # We count how many pokemons have not fainted in each team
-        remaining_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
-        remaining_mon_opponent = (
-            len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
-        )
-        
-        team_types = [t.value for t in battle.active_pokemon.types if t is not None]
-        team_one_hot_types = one_hot(team_types, 18)
-    
-        opponent_types = [t.value for t in battle.opponent_active_pokemon.types if t is not None]
-        opponent_one_hot_types = one_hot(opponent_types, 18)
-        
-        moves_categories -= 1
-        category_matrix = np.zeros((4, 3))
-        category_matrix[np.arange(4), moves_categories] = 1
-        
-        status_matrix = np.zeros((4, 7))
-        for i, status_type in enumerate(moves_status):
-            if status_type != 0:
-                status_matrix[i, status_type - 1] = 1
-        
-        team_stats = battle.active_pokemon.stats
-        stats_array = np.zeros(5)
-        stats_array[0] = team_stats['atk']
-        stats_array[1] = team_stats['def']
-        stats_array[2] = team_stats['spa']
-        stats_array[3] = team_stats['spd']
-        stats_array[4] = team_stats['spe']
-        stats_array /= 100
-        
-        # Final vector with 10 components
-        return np.concatenate(
-            [moves_base_power,
-             moves_dmg_multiplier,
-             moves_accuracy,
-             category_matrix.flatten(),
-             status_matrix.flatten(),
-             team_one_hot_types,
-             [battle.active_pokemon.level],
-             stats_array,
-             opponent_one_hot_types,
-             [battle.opponent_active_pokemon.level],
-             [remaining_mon_team, remaining_mon_opponent]]
-        )
-
-    def compute_reward(self, battle) -> float:
-        return self.reward_computing_helper(
-            battle,
-            fainted_value=2,
-            hp_value=1,
-            victory_value=30,
-        )
-
+from utils import set_random_seed
+import teams
 
 def main():
+    set_random_seed(0)
+
     start = time.time()
-    bf = "gen8randombattle"
+    bf = "gen8ou"
+    # bf = 'gen8randombattle'
 
     # Initialize agent
-    env_player = RLEnvPlayer(battle_format=bf)
-    dqn = DQNAgent(97, len(env_player.action_space))
+    team_used = teams.two_team_1_2
+    emb_dim = 302
+
+    env_player = RLEnvPlayer(battle_format=bf, team=team_used)
+    dqn = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
     dqn.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
-    random_player = RandomPlayer(battle_format=bf)
-    max_dmg_player = MaxBasePowerPlayer(battle_format=bf)
-    heur_player = SimpleHeuristicsPlayer(battle_format=bf)
+    random_player = RandomPlayer(battle_format=bf, team=team_used)
+    max_dmg_player = MaxBasePowerPlayer(battle_format=bf, team=team_used)
+    heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=team_used)
 
-    num_burn_in = 10
+    num_burn_in = 20
+    run_one_episode = lambda x: dqn.train_one_episode(x, no_train=True)
     for i in range(num_burn_in):
         print(f'Burn in episode {i}')
         custom_play_against(
             env_player=env_player,
-            env_algorithm=dqn.run_one_episode,
+            env_algorithm=run_one_episode,
             opponent=heur_player,
+        )
+        custom_play_against(
+            env_player=env_player,
+            env_algorithm=run_one_episode,
+            opponent=max_dmg_player,
         )
 
     num_episodes = 10
-    training_per_episode = 100
+    training_per_episode = 200
     n_eval_battles = 20
     episodes = np.arange(1, num_episodes + 1)
     agent_wins_cum = 0
