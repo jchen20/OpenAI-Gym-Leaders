@@ -14,11 +14,14 @@ from poke_env.player.battle_order import BattleOrder
 
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
+from a2c_agent import A2CAgent
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
 from utils import set_random_seed
 import teams
 
 def main():
+    method = 'a2c'
+    
     set_random_seed(0)
 
     start = time.time()
@@ -30,16 +33,19 @@ def main():
     emb_dim = 302
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
-    dqn = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
-    dqn.set_embed_battle(env_player.embed_battle)
+    if method == 'dqn':
+        agent = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
+    else:
+        agent = A2CAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
+    agent.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
     random_player = RandomPlayer(battle_format=bf, team=team_used)
     max_dmg_player = MaxBasePowerPlayer(battle_format=bf, team=team_used)
     heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=team_used)
 
-    num_burn_in = 20
-    run_one_episode = lambda x: dqn.train_one_episode(x, no_train=True)
+    num_burn_in = 20 if method == 'dqn' else 0
+    run_one_episode = lambda x: agent.train_one_episode(x, no_train=True)
     for i in range(num_burn_in):
         print(f'Burn in episode {i}')
         custom_play_against(
@@ -70,12 +76,12 @@ def main():
         for j in range(training_per_episode):
             custom_play_against(
                 env_player=env_player,
-                env_algorithm=dqn.train_one_episode,
+                env_algorithm=agent.train_one_episode,
                 opponent=max_dmg_player,
             )
             custom_play_against(
                 env_player=env_player,
-                env_algorithm=dqn.train_one_episode,
+                env_algorithm=agent.train_one_episode,
                 opponent=heur_player,
             )
 
@@ -83,35 +89,35 @@ def main():
 
         print('\nEvaluating against Random Player:')
         evaluate_model(
-            player=dqn,
+            player=agent,
             opponent=random_player,
             n_battles=n_eval_battles
         )
         if i == 0:
-            agent_random_wins[i] = dqn.n_won_battles
+            agent_random_wins[i] = agent.n_won_battles
         else:
-            agent_random_wins[i] = dqn.n_won_battles - agent_wins_cum
-        agent_wins_cum = dqn.n_won_battles
+            agent_random_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_random_wins[i]} out of {n_eval_battles}')
 
         print('\nEvaluating against Max Damage Player:')
         evaluate_model(
-            player=dqn,
+            player=agent,
             opponent=max_dmg_player,
             n_battles=n_eval_battles
         )
-        agent_max_dmg_wins[i] = dqn.n_won_battles - agent_wins_cum
-        agent_wins_cum = dqn.n_won_battles
+        agent_max_dmg_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_max_dmg_wins[i]} out of {n_eval_battles}')
 
         print('\nEvaluating against Heuristic Player:')
         evaluate_model(
-            player=dqn,
+            player=agent,
             opponent=heur_player,
             n_battles=n_eval_battles
         )
-        agent_heur_wins[i] = dqn.n_won_battles - agent_wins_cum
-        agent_wins_cum = dqn.n_won_battles
+        agent_heur_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
 
     print(agent_random_wins)
