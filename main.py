@@ -14,7 +14,7 @@ from poke_env.player.battle_order import BattleOrder
 
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
-from a2c_agent import A2CAgent
+from a2c_agent import A2CAgent, A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
 from utils import set_random_seed
 import teams
@@ -36,7 +36,7 @@ def main():
     if method == 'dqn':
         agent = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
     else:
-        agent = A2CAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
+        agent = A2CAgentFullTrajectoryUpdate(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
