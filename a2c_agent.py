@@ -68,6 +68,10 @@ class A2CAgent(Player):
         terminal = torch.tensor(terminal, dtype=bool).to(self.device)
 
         _, next_values = self.model(next_state, next_mask) # can probably find a way to not make this redundant computation
+        if next_values.size()[0] == 0:
+            print('Bug here')
+            print(next_state.size())
+            print(next_mask.size())
         with torch.set_grad_enabled(True):
             self.optimizer.zero_grad()
             dist, values = self.model(state, mask)
