@@ -14,7 +14,7 @@ from poke_env.player.battle_order import BattleOrder
 
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
-from a2c_agent import A2CAgent, A2CAgentFullTrajectoryUpdate
+from a2c_agent import A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, evaluate_model
 from utils import set_random_seed
 import teams
