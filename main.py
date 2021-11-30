@@ -30,7 +30,7 @@ def main():
     emb_dim = 302
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
-    dqn = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
+    dqn = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used, gamma=0.999)
     dqn.set_embed_battle(env_player.embed_battle)
 
     # Initialize random player
@@ -54,7 +54,10 @@ def main():
         )
 
     num_episodes = 10
-    training_per_episode = 200
+    training_per_episode = 50
+    train_weight_max = 1
+    train_weight_heuristic = 3
+    train_weight_self = 0
     n_eval_battles = 20
     episodes = np.arange(1, num_episodes + 1)
     agent_wins_cum = 0
@@ -68,16 +71,18 @@ def main():
 
         # Train env_player
         for j in range(training_per_episode):
-            custom_play_against(
-                env_player=env_player,
-                env_algorithm=dqn.train_one_episode,
-                opponent=max_dmg_player,
-            )
-            custom_play_against(
-                env_player=env_player,
-                env_algorithm=dqn.train_one_episode,
-                opponent=heur_player,
-            )
+            for k in range(train_weight_max):
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=dqn.train_one_episode,
+                    opponent=max_dmg_player,
+                )
+            for l in range(train_weight_heuristic):
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=dqn.train_one_episode,
+                    opponent=heur_player,
+                )
 
         # Evaluate
 
