@@ -171,6 +171,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             "cuda" if torch.cuda.is_available() else "cpu")
         
         self.model.to(self.device)
+        self.alpha = 0.5
     
     def _train_one_step(self, batch):
         state, mask, action, _, _, rwd, _ = zip(*batch)
@@ -186,7 +187,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             
             actor_loss = -(dist.log_prob(action) * (discounted_rwd - values).detach()).mean()
             critic_loss = (discounted_rwd - values).pow(2).mean()
-            loss = actor_loss + 0.5 * critic_loss
+            loss = actor_loss + self.alpha * critic_loss
             
             loss.backward()
             self.optimizer.step()
