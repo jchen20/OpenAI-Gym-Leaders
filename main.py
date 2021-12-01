@@ -68,22 +68,28 @@ def main():
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
 
+    wins_max_dmg = False
+    wins_heuristic = False
+    wr_threshold = 0.8
+
     for i in range(num_episodes):
         print('\n\n-------------------------')
         print(f'Training episode {i}')
 
         # Train env_player
         for j in range(training_per_episode):
-            custom_play_against(
-                env_player=env_player,
-                env_algorithm=agent.train_one_episode,
-                opponent=max_dmg_player,
-            )
-            custom_play_against(
-                env_player=env_player,
-                env_algorithm=agent.train_one_episode,
-                opponent=heur_player,
-            )
+            if not wins_max_dmg:
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=agent.train_one_episode,
+                    opponent=max_dmg_player,
+                )
+            if not wins_heuristic:
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=agent.train_one_episode,
+                    opponent=heur_player,
+                )
 
         # Evaluate
 
@@ -109,6 +115,8 @@ def main():
         agent_max_dmg_wins[i] = agent.n_won_battles - agent_wins_cum
         agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_max_dmg_wins[i]} out of {n_eval_battles}')
+        if agent_max_dmg_wins[i] / n_eval_battles > wr_threshold:
+            wins_max_dmg = True
 
         print('\nEvaluating against Heuristic Player:')
         evaluate_model(
@@ -119,6 +127,8 @@ def main():
         agent_heur_wins[i] = agent.n_won_battles - agent_wins_cum
         agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
+        if agent_heur_wins[i] / n_eval_battles > wr_threshold:
+            wins_heuristic = True
 
     print(agent_random_wins)
     print(agent_max_dmg_wins)
