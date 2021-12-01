@@ -52,7 +52,7 @@ class DQNAgent(Player):
         self.model = DQN(state_size, action_space)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5,
                                           weight_decay=1e-4)
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
+        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.9925)
         self.memory = ReplayMemory(1000)
         self.eps = eps
         self.batch_size = batch_size
