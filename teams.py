@@ -95,7 +95,7 @@ Relaxed Nature
 - Toxic
 """
 
-full_team = team_1 = """
+team_1 = """
 Goodra (M) @ Assault Vest
 Ability: Sap Sipper
 EVs: 248 HP / 252 SpA / 8 Spe

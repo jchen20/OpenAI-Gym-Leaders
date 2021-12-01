@@ -160,8 +160,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
     def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.95, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = A2C(state_size, action_space)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4,
-                                          weight_decay=1e-4)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5,
+                                          weight_decay=1e-5)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
         self.batch_size = batch_size
         self.gamma = gamma

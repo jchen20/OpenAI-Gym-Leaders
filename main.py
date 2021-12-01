@@ -28,7 +28,7 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversial_train = True
+    adversarial_train = True
 
     # Initialize agent
     team_used = teams.two_team_1_2
@@ -41,7 +41,7 @@ def main():
         agent = A2CAgentFullTrajectoryUpdate(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
-    if adversial_train:
+    if adversarial_train:
         env_player2 = RLEnvPlayer(battle_format=bf, team=team_used)
         if method == 'dqn':
             agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 8, battle_format=bf, team=team_used)
@@ -68,7 +68,7 @@ def main():
             env_algorithm=run_one_episode,
             opponent=max_dmg_player,
         )
-    if adversial_train:
+    if adversarial_train:
         for i in range(num_burn_in):
             print(f'Burn in episode {i}')
             custom_play_against(
@@ -82,8 +82,8 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 20
-    training_per_episode = 60
+    num_episodes = 10
+    training_per_episode = 50
 
     train_max_weight = 1
     train_heuristic_weight = 3
@@ -95,6 +95,11 @@ def main():
     agent_random_wins = np.zeros(num_episodes, dtype=int)
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
+
+    agent2_wins_cum = 0
+    agent2_random_wins = np.zeros(num_episodes, dtype=int)
+    agent2_max_dmg_wins = np.zeros(num_episodes, dtype=int)
+    agent2_heur_wins = np.zeros(num_episodes, dtype=int)
 
     for i in range(num_episodes):
         print('\n\n-------------------------')
@@ -114,7 +119,7 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=heur_player,
                 )
-            if adversial_train:
+            if adversarial_train:
                 for _ in range(train_max_weight):
                     custom_play_against(
                         env_player=env_player2,
@@ -169,6 +174,42 @@ def main():
         agent_heur_wins[i] = agent.n_won_battles - agent_wins_cum
         agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
+        
+        if adversarial_train:
+            # Evaluate
+            print('\nAgent 2:')
+            print('\nEvaluating against Random Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=random_player,
+                n_battles=n_eval_battles
+            )
+            if i == 0:
+                agent2_random_wins[i] = agent2.n_won_battles
+            else:
+                agent2_random_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
+
+            print('\nEvaluating against Max Damage Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=max_dmg_player,
+                n_battles=n_eval_battles
+            )
+            agent2_max_dmg_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
+
+            print('\nEvaluating against Heuristic Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=heur_player,
+                n_battles=n_eval_battles
+            )
+            agent2_heur_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
 
     print(agent_random_wins)
     print(agent_max_dmg_wins)
