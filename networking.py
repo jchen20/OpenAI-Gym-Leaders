@@ -78,6 +78,75 @@ def custom_play_against(
         thread.join()
 
 
+def custom_train_agents(
+        env_player: EnvPlayer, env_algorithm: Callable, opponent: Player, opponent_algorithm: Callable, env_algorithm_kwargs=None, opponent_algorithm_kwargs=None
+    ):
+        """Executes a function controlling the player while facing opponent.
+        Both players are meant to be trainable agents.
+
+        The env_algorithm function is executed with the player environment as first
+        argument. It exposes the open ai gym API.
+
+        Additional arguments can be passed to the env_algorithm function with
+        env_algorithm_kwargs.
+
+        Battles against opponent will be launched as long as env_algorithm is running.
+        When env_algorithm returns, the current active battle will be finished randomly
+        if it is not already.
+
+        :param env_algorithm: A function that controls the player. It must accept the
+            player as first argument. Additional arguments can be passed with the
+            env_algorithm_kwargs argument.
+        :type env_algorithm: callable
+        :param opponent: A player against with the env player will player.
+        :type opponent: Player
+        :param env_algorithm_kwargs: Optional arguments to pass to the env_algorithm.
+            Defaults to None.
+        """
+        async def launch_battles(player: EnvPlayer, opponent: Player):
+            battles_coroutine = asyncio.gather(
+                player.send_challenges(
+                    opponent=to_id_str(opponent.username),
+                    n_challenges=1,
+                    to_wait=opponent.logged_in,
+                ),
+                opponent.accept_challenges(
+                    opponent=to_id_str(player.username), n_challenges=1
+                ),
+            )
+            await battles_coroutine
+
+        def env_algorithm_wrapper(player, kwargs):
+            env_algorithm(player, **kwargs)
+
+        loop = asyncio.get_event_loop()
+
+        if env_algorithm_kwargs is None:
+            env_algorithm_kwargs = {}
+
+        def opponent_algorithm_wrapper(player, kwargs):
+            opponent_algorithm(player, **kwargs)
+
+        opponent_loop = asyncio.get_event_loop()
+
+        if opponent_algorithm_kwargs is None:
+            opponent_algorithm_kwargs = {}
+
+        thread = Thread(
+            target=lambda: env_algorithm_wrapper(env_player, env_algorithm_kwargs)
+        )
+        thread.start()
+        
+        thread2 = Thread(
+            target=lambda: opponent_algorithm_wrapper(opponent, opponent_algorithm_kwargs)
+        )
+        thread2.start()
+
+        loop.run_until_complete(launch_battles(env_player, opponent))
+
+        thread.join()
+        thread2.join()
+
 async def battle_against_wrapper(player, opponent, n_battles):
     await player.battle_against(opponent, n_battles)
 
