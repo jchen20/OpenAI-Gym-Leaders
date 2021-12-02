@@ -42,15 +42,15 @@ class A2C(nn.Module):
             # self.base,
             # nn.Linear(512, 128),
             # nn.LeakyReLU(),
-            nn.Linear(512, len_action_space)
+            nn.Linear(512, 1)
         )
     
     def forward(self, x, mask):
         policy = self.actor(x)
         policy *= mask
         dist = Categorical(logits=policy)
-        q_values = self.critic(x)
-        return dist, q_values
+        values = self.critic(x)
+        return dist, torch.squeeze(values)
     
     def actor_forward(self, x, mask):
         policy = self.actor(x)
@@ -59,8 +59,8 @@ class A2C(nn.Module):
         return dist
     
     def critic_forward(self, x):
-        q_values = self.critic(x)
-        return q_values
+        values = self.critic(x)
+        return torch.squeeze(values)
 
 
 class A2CAgentFullTrajectoryUpdate(Player):
@@ -75,7 +75,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.03 / np.log(action_space)
+        self.entropy_beta = 0.05 / np.log(action_space)
         self.alpha = 2
         self.embed_battle = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -152,9 +152,11 @@ class A2CAgentFullTrajectoryUpdate(Player):
         n = len(state)
         lambda_scale = self.lambda_scale[:n]
         gamma_scale = self.gamma_scale[:n]
-        prev_values = self.model.critic_forward(state)[range(n), action]
+        # prev_values = self.model.critic_forward(state)[range(n), action]
+        prev_values = self.model.critic_forward(state)
         next_values = reward
-        next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
+        # next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
+        next_values[~terminal] += self.gamma * self.model.critic_forward(next_state[~terminal])
         td_error = next_values - prev_values
         td_error = td_error * lambda_scale * gamma_scale
         return td_error

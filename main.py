@@ -29,7 +29,7 @@ def main():
     # bf = 'gen8randombattle'
 
     # Initialize agent
-    team_used = teams.two_team_1_2
+    team_used = teams.six_team
     emb_dim = 302
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
@@ -61,7 +61,7 @@ def main():
 
     num_episodes = 10
     training_per_episode = 200
-    n_eval_battles = 20
+    n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)
     agent_wins_cum = 0
     agent_random_wins = np.zeros(num_episodes, dtype=int)
