@@ -170,6 +170,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             fainted_value=1,
             hp_value=1,
             victory_value=2,
+            status_value=0.1,
         )
     
     def choose_move(self, battle: AbstractBattle) -> BattleOrder:
