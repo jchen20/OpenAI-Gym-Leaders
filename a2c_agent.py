@@ -96,8 +96,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
         rwd = torch.tensor(rwd, dtype=torch.float32).to(self.device)
         terminal = torch.tensor(terminal, dtype=bool).to(self.device)
 
-        prev_actions_state = torch.cat((torch.zeros(1, self.action_space), F.one_hot(action[:-1], self.action_space)), dim=0)
-        prev_actions_next_state = F.one_hot(action, self.action_space)
+        prev_actions_state = torch.cat((torch.zeros(1, self.action_space), F.one_hot(action[:-1], self.action_space).float()), dim=0)
+        prev_actions_next_state = F.one_hot(action, self.action_space).float()
         state = torch.cat((state, prev_actions_state), dim=1)
         next_state = torch.cat((next_state, prev_actions_next_state), dim=1)
         
