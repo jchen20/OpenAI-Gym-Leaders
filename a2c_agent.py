@@ -160,7 +160,6 @@ class A2CAgentFullTrajectoryUpdate(Player):
         td_error = next_values - prev_values
         td_error = td_error * lambda_scale * gamma_scale
         return td_error
-    
 
     
     def set_embed_battle(self, embed_battle):

@@ -31,8 +31,13 @@ def main():
     adversarial_train = False
 
     # Initialize agent
+<<<<<<< HEAD
     team_used = teams.six_team
     emb_dim = 371
+=======
+    team_used = teams.three_team_1_4_5
+    emb_dim = 302
+>>>>>>> 66970a2eb2f798a6992b7d171654b39df53fd74a
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
@@ -82,12 +87,12 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 10
-    training_per_episode = 50
+    num_episodes = 20
+    training_per_episode = 100
 
-    train_max_weight = 2
-    train_heuristic_weight = 4
-    train_self_weight = 0
+    train_max_weight = 1
+    train_heuristic_weight = 3
+    train_self_weight = 2
 
     n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)
@@ -141,7 +146,7 @@ def main():
                     )
 
         # Evaluate
-
+        print('\nAgent 1:')
         print('\nEvaluating against Random Player:')
         evaluate_model(
             player=agent,
