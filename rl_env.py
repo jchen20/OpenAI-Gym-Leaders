@@ -25,6 +25,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         moves_accuracy = np.zeros(4)
         moves_categories = np.zeros(4, dtype=int)
         moves_status = np.zeros(4, dtype=int)
+        moves_heal = np.zeros(4, dtype=int)
         for i, move in enumerate(battle.available_moves):
             moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
             moves_accuracy[i] = move.accuracy
@@ -40,12 +41,14 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
                 )
                 if move.type in battle.active_pokemon.types:
                     moves_dmg_multiplier[i] *= 1.5 # STAB
+            moves_heal[i] = move.heal
         
         dynamax_moves_base_power = -np.ones(4, dtype=int)
         dynamax_moves_dmg_multiplier = np.zeros(4)
         dynamax_moves_accuracy = np.zeros(4)
         dynamax_moves_categories = np.zeros(4, dtype=int)
         dynamax_moves_status = np.zeros(4, dtype=int)
+        dynamax_moves_heal = np.zeros(4, dtype=int)
         for i, move in enumerate(battle.available_moves):
             move = move.dynamaxed
             dynamax_moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
@@ -62,6 +65,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
                 )
                 if move.type in battle.active_pokemon.types:
                     dynamax_moves_dmg_multiplier[i] *= 1.5 # STAB
+            dynamax_moves_heal[i] = move.heal
 
         # We count how many pokemons have not fainted in each team
         remaining_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
@@ -137,16 +141,51 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             pokemon_types = [t.value for t in pokemon.types if t is not None]
             switch_matrix[i, 7:25] += one_hot(pokemon_types, 18)
         
+        side_conds = battle.side_conditions
+        cond_idxs = []
+        cond_cts = []
+        for k, v in side_conds.items():
+            cond_idxs.append(k.value)
+            cond_cts.append(v)
+        if cond_idxs:
+            side_cond_arr = one_hot(cond_idxs, 20, weight=cond_cts)
+        else:
+            side_cond_arr = np.zeros(20)
+        opp_side_conds = battle.opponent_side_conditions
+        opp_cond_idxs = []
+        opp_cond_cts = []
+        for k, v in opp_side_conds.items():
+            opp_cond_idxs.append(k.value)
+            opp_cond_cts.append(v)
+        if opp_cond_idxs:
+            opp_side_cond_arr = one_hot(opp_cond_idxs, 20, weight=opp_cond_cts)
+        else:
+            opp_side_cond_arr = np.zeros(20)
+
+        fields_idx = list(map(lambda x: x.value, battle.fields.keys()))
+        if fields_idx:
+            fields_arr = one_hot(fields_idx, 13)
+        else:
+            fields_arr = np.zeros(13)
+
+        weather_idx = list(map(lambda x: x.value, battle.weather.keys()))
+        if weather_idx:
+            weather_arr = one_hot(weather_idx, 8)
+        else:
+            weather_arr = np.zeros(8)
+        
         # Final vector with many components
         state_vector = np.concatenate([
             moves_base_power,
             moves_dmg_multiplier,
             moves_accuracy,
+            moves_heal,
             category_matrix.flatten(),
             status_matrix.flatten(),
             dynamax_moves_base_power,
             dynamax_moves_dmg_multiplier,
             dynamax_moves_accuracy,
+            dynamax_moves_heal,
             dynamax_category_matrix.flatten(),
             dynamax_status_matrix.flatten(),
             curr_one_hot_types,
@@ -160,6 +199,10 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             opponent_boosts_array,
             [remaining_mon_team, remaining_mon_opponent],
             switch_matrix.flatten(),
+            side_cond_arr,
+            opp_side_cond_arr,
+            fields_arr,
+            weather_arr
         ])
         
         return state_vector, get_valid_actions_mask(battle)

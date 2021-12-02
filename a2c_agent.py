@@ -69,12 +69,12 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=5e-6)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-6)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
-        self.eps = 0.1
+        self.eps = 0.05
         self.entropy_beta = 0.05 / np.log(action_space)
         self.alpha = 2
         self.embed_battle = None
@@ -170,7 +170,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             if self.last_action is None:
                 state = np.append(state, np.zeros(self.action_space))
             else:
-                state = np.append(state, one_hot(self.last_action, self.action_space))
+                state = np.append(state, one_hot(self.last_action + 1, self.action_space))
             state = torch.tensor([state]).float().to(self.device)
             mask = torch.tensor(mask, dtype=torch.float32).to(self.device)
             dist = self.model.actor_forward(state, mask)
