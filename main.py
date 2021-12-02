@@ -31,13 +31,8 @@ def main():
     adversarial_train = False
 
     # Initialize agent
-<<<<<<< HEAD
     team_used = teams.six_team
     emb_dim = 371
-=======
-    team_used = teams.three_team_1_4_5
-    emb_dim = 302
->>>>>>> 66970a2eb2f798a6992b7d171654b39df53fd74a
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
