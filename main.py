@@ -85,6 +85,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
              [remaining_mon_team, remaining_mon_opponent]]
         )
 
+<<<<<<< Updated upstream
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(
             battle,
@@ -114,6 +115,9 @@ def evaluate(env, player):
 def main():
     start = time.time()
     bf = "gen8randombattle"
+=======
+    adversarial_train = False
+>>>>>>> Stashed changes
 
     # Initialize agent
     env_player = RLEnvPlayer(battle_format="gen8randombattle")
@@ -125,17 +129,81 @@ def main():
 
     num_episodes = 10
     episodes = np.arange(1, num_episodes + 1)
+<<<<<<< Updated upstream
     agent_games_cum = np.zeros(num_episodes)
     agent_wins_cum = np.zeros(num_episodes)
     agent_games = np.zeros(num_episodes)
     agent_wins = np.zeros(num_episodes)
+=======
+    agent_wins_cum = 0
+    agent_random_wins = np.zeros(num_episodes, dtype=int)
+    agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
+    agent_heur_wins = np.zeros(num_episodes, dtype=int)
+
+    agent_random_rewards = np.zeros(num_episodes, dtype=float)
+    agent_max_dmg_rewards = np.zeros(num_episodes, dtype=float)
+    agent_heur_rewards = np.zeros(num_episodes, dtype=float)
+    
+    agent2_wins_cum = 0
+    agent2_random_wins = np.zeros(num_episodes, dtype=int)
+    agent2_max_dmg_wins = np.zeros(num_episodes, dtype=int)
+    agent2_heur_wins = np.zeros(num_episodes, dtype=int)
+>>>>>>> Stashed changes
 
     for i in range(num_episodes):
         print(f'Training episode {i}')
 
         # Train env_player
+<<<<<<< Updated upstream
         env_player.play_against(
             env_algorithm=dqn.train_one_episode,
+=======
+        for j in range(training_per_episode):
+            for k in range(train_max_weight):
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=agent.train_one_episode,
+                    opponent=max_dmg_player,
+                )
+                if (j+1 == training_per_episode) and (k+1 == train_max_weight):
+                    agent_max_dmg_rewards[i] = agent.episode_reward
+                agent.episode_reward = 0
+            for l in range(train_heuristic_weight):
+                custom_play_against(
+                    env_player=env_player,
+                    env_algorithm=agent.train_one_episode,
+                    opponent=heur_player,
+                )
+                if (j+1 == training_per_episode) and (l+1 == train_heuristic_weight):
+                    agent_heur_rewards[i] = agent.episode_reward
+                agent.episode_reward = 0
+            if adversarial_train:
+                for _ in range(train_max_weight):
+                    custom_play_against(
+                        env_player=env_player2,
+                        env_algorithm=agent2.train_one_episode,
+                        opponent=max_dmg_player,
+                    )
+                for _ in range(train_heuristic_weight):
+                    custom_play_against(
+                        env_player=env_player2,
+                        env_algorithm=agent2.train_one_episode,
+                        opponent=heur_player,
+                    )
+                for m in range(train_self_weight):
+                    custom_train_agents(
+                        env_player=env_player,
+                        env_algorithm=agent.train_one_episode,
+                        opponent=env_player2,
+                        opponent_algorithm=agent2.train_one_episode
+                    )
+
+        # Evaluate
+        print('\nAgent 1:')
+        print('\nEvaluating against Random Player:')
+        evaluate_model(
+            player=agent,
+>>>>>>> Stashed changes
             opponent=random_player,
         )
 
@@ -160,11 +228,83 @@ def main():
             agent_games[i] = agent_games_cum[i]
             agent_wins[i] = agent_wins_cum[i]
         else:
+<<<<<<< Updated upstream
             agent_games[i] = agent_games_cum[i] - agent_games_cum[i-1]
             agent_wins[i] = agent_wins_cum[i] - agent_wins_cum[i-1]
 
     print(agent_games)
     print(agent_wins)
+=======
+            agent_random_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
+        print(f'Wins: {agent_random_wins[i]} out of {n_eval_battles}')
+
+        custom_play_against(
+            env_player=env_player,
+            env_algorithm=agent.train_one_episode,
+            opponent=random_player,
+            env_algorithm_kwargs={"no_train": True}
+        )
+        print('\nEvaluating against Max Damage Player:')
+        evaluate_model(
+            player=agent,
+            opponent=max_dmg_player,
+            n_battles=n_eval_battles
+        )
+        agent_max_dmg_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
+        print(f'Wins: {agent_max_dmg_wins[i]} out of {n_eval_battles}')
+
+        print('\nEvaluating against Heuristic Player:')
+        evaluate_model(
+            player=agent,
+            opponent=heur_player,
+            n_battles=n_eval_battles
+        )
+        agent_heur_wins[i] = agent.n_won_battles - agent_wins_cum
+        agent_wins_cum = agent.n_won_battles
+        print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
+        
+        if adversarial_train:
+            # Evaluate
+            print('\nAgent 2:')
+            print('\nEvaluating against Random Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=random_player,
+                n_battles=n_eval_battles
+            )
+            if i == 0:
+                agent2_random_wins[i] = agent2.n_won_battles
+            else:
+                agent2_random_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
+
+            print('\nEvaluating against Max Damage Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=max_dmg_player,
+                n_battles=n_eval_battles
+            )
+            agent2_max_dmg_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
+
+            print('\nEvaluating against Heuristic Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=heur_player,
+                n_battles=n_eval_battles
+            )
+            agent2_heur_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
+
+    print(agent_random_wins)
+    print(agent_max_dmg_wins)
+    print(agent_heur_wins)
+>>>>>>> Stashed changes
 
     plt.figure()
     plt.plot(episodes, agent_wins, '-b', label="Agent Wins")
@@ -172,6 +312,15 @@ def main():
     plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
     # plt.legend()
+    plt.show()
+
+    plt.figure()
+    plt.plot(episodes, agent_max_dmg_rewards, '-g', label="Agent Reward against Max Dmg")
+    plt.plot(episodes, agent_heur_rewards, '-r', label="Agent Reward against Heuristic")
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.title("Agent Reward Per Episode")
+    plt.legend()
     plt.show()
 
 

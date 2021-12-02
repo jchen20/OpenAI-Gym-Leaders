@@ -51,6 +51,7 @@ class DQNAgent(Player):
         self.batch_size = batch_size
         self.gamma = gamma
         self.embed_battle = None
+        self.episode_reward = 0
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
@@ -99,10 +100,21 @@ class DQNAgent(Player):
         while not done:
             print(ct)
             ct += 1
+<<<<<<< Updated upstream
             action = self._best_action(state)
             next_state, rwd, done, _ = env.step(action)
             self.memory.push((state, action, next_state, rwd, done))
             self._train_one_step()
+=======
+            if random.random() < self.eps:
+                action = random.choice(np.where(mask)[0])
+            else:
+                action = self._best_action(state, mask)
+            (next_state, next_mask), rwd, done, _ = env.step(action)
+            self.episode_reward += rwd
+            performed_action = env.last_action
+            self.memory.push((state, mask, performed_action, next_state, next_mask, rwd, done))
+>>>>>>> Stashed changes
             state = next_state
 
         # state = env.reset()
