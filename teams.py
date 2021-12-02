@@ -34,6 +34,7 @@ IVs: 0 Atk
 - Protect
 - Wish
 """
+
 three_team_1_2_4 = """
 Goodra (M) @ Assault Vest
 Ability: Sap Sipper
@@ -95,7 +96,7 @@ Relaxed Nature
 - Toxic
 """
 
-team_1 = """
+six_team = """
 Goodra (M) @ Assault Vest
 Ability: Sap Sipper
 EVs: 248 HP / 252 SpA / 8 Spe

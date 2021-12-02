@@ -16,6 +16,7 @@ from utils import get_valid_actions_mask, one_hot, player_action_to_move
 
 
 class RLEnvPlayer(Gen8EnvSinglePlayer):
+
     def embed_battle(self, battle):
         # -1 indicates that the move does not have a base power
         # or is not available
@@ -166,10 +167,10 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(
             battle,
-            fainted_value=2,
+            fainted_value=1,
             hp_value=1,
-            victory_value=4,
-            status_value=0.1
+            victory_value=2,
+            status_value=0.1,
         )
     
     def choose_move(self, battle: AbstractBattle) -> BattleOrder:

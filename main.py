@@ -14,7 +14,7 @@ from poke_env.player.battle_order import BattleOrder
 
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
-from a2c_agent import A2CAgent, A2CAgentFullTrajectoryUpdate
+from a2c_agent import A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, evaluate_model,custom_train_agents
 from utils import set_random_seed
 import teams
@@ -95,7 +95,7 @@ def main():
     agent_random_wins = np.zeros(num_episodes, dtype=int)
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
-
+    
     agent2_wins_cum = 0
     agent2_random_wins = np.zeros(num_episodes, dtype=int)
     agent2_max_dmg_wins = np.zeros(num_episodes, dtype=int)
