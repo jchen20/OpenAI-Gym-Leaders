@@ -28,11 +28,11 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversarial_train = True
+    adversarial_train = False
 
     # Initialize agent
-    team_used = teams.two_team_1_2
-    emb_dim = 302
+    team_used = teams.six_team
+    emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
@@ -85,9 +85,9 @@ def main():
     num_episodes = 10
     training_per_episode = 50
 
-    train_max_weight = 1
-    train_heuristic_weight = 3
-    train_self_weight = 1
+    train_max_weight = 2
+    train_heuristic_weight = 4
+    train_self_weight = 0
 
     n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)

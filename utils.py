@@ -5,10 +5,13 @@ import random
 
 from networking import battle_against_wrapper
 
-def one_hot(locations, size):
+def one_hot(locations, size, weight=None):
     vector = np.zeros(size)
     locations = np.array(locations) - 1
-    vector[locations] = 1
+    if weight is None:
+        vector[locations] = 1
+    else:
+        vector[locations] = weight
     return vector
 
 def set_random_seed(sd):
