@@ -58,6 +58,7 @@ class DQNAgent(Player):
         self.batch_size = batch_size
         self.gamma = gamma
         self.embed_battle = None
+        self.episode_reward = 0
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
@@ -107,6 +108,7 @@ class DQNAgent(Player):
             else:
                 action = self._best_action(state, mask)
             (next_state, next_mask), rwd, done, _ = env.step(action)
+            self.episode_reward = rwd
             performed_action = env.last_action
             self.memory.push((state, mask, performed_action, next_state, next_mask, rwd, done))
             state = next_state

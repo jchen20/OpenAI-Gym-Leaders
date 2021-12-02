@@ -34,7 +34,7 @@ def main():
 
     # Initialize agent
     team_used = teams.three_team_1_4_5
-    emb_dim = 302
+    emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
@@ -89,7 +89,7 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 20
+    num_episodes = 10
     training_per_episode = 100
 
     train_max_weight = 1
@@ -98,14 +98,15 @@ def main():
 
     n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)
+    trainings = np.arange(1, num_episodes*training_per_episode + 1)
     agent_wins_cum = 0
     agent_random_wins = np.zeros(num_episodes, dtype=int)
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
 
-    agent_random_rewards = np.zeros(num_episodes, dtype=float)
-    agent_max_dmg_rewards = np.zeros(num_episodes, dtype=float)
-    agent_heur_rewards = np.zeros(num_episodes, dtype=float)
+    agent_random_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
+    agent_max_dmg_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
+    agent_heur_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
 
     agent2_wins_cum = 0
     agent2_random_wins = np.zeros(num_episodes, dtype=int)
@@ -124,9 +125,8 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=max_dmg_player,
                 )
-                if (j + 1 == training_per_episode) and (
-                        k + 1 == train_max_weight):
-                    agent_max_dmg_rewards[i] = agent.episode_reward
+                if k + 1 == train_max_weight:
+                    agent_max_dmg_rewards[i*training_per_episode + j] = agent.episode_reward
                 agent.episode_reward = 0
             for l in range(train_heuristic_weight):
                 custom_play_against(
@@ -134,9 +134,8 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=heur_player,
                 )
-                if (j + 1 == training_per_episode) and (
-                        l + 1 == train_heuristic_weight):
-                    agent_heur_rewards[i] = agent.episode_reward
+                if l + 1 == train_heuristic_weight:
+                    agent_heur_rewards[i*training_per_episode + j] = agent.episode_reward
                 agent.episode_reward = 0
             if adversarial_train:
                 for _ in range(train_max_weight):
@@ -254,9 +253,9 @@ def main():
     plt.show()
 
     plt.figure()
-    plt.plot(episodes, agent_max_dmg_rewards, '-g',
+    plt.semilogy(trainings, agent_max_dmg_rewards, '-g',
              label="Agent Reward against Max Dmg")
-    plt.plot(episodes, agent_heur_rewards, '-r',
+    plt.semilogy(trainings, agent_heur_rewards, '-r',
              label="Agent Reward against Heuristic")
     plt.xlabel("Episode")
     plt.ylabel("Reward")

@@ -64,20 +64,21 @@ class A2C(nn.Module):
 
 
 class A2CAgentFullTrajectoryUpdate(Player):
-    def __init__(self, state_size, action_space, batch_size=16, gamma=0.99, gae_lambda=0.9, *args, **kwargs):
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-6)
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
+        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
-        self.eps = 0.05
-        self.entropy_beta = 0.05 / np.log(action_space)
-        self.alpha = 2
+        self.eps = 0.1
+        self.entropy_beta = 0.03 / np.log(action_space)
+        self.alpha = 50
         self.embed_battle = None
+        self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.lambda_scale = torch.Tensor([self.gamma**i for i in range(self.batch_size)][::-1], device=self.device)
@@ -136,6 +137,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             else:
                 action = self._best_action(state, mask)
             (next_state, next_mask), rwd, done, _ = env.step(action)
+            self.episode_reward = rwd
             performed_action = env.last_action
             self.last_action = performed_action
             one_batch.append((state, mask, performed_action, next_state, next_mask, rwd, done))
