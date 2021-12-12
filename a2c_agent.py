@@ -64,9 +64,12 @@ class A2C(nn.Module):
 
 
 class A2CAgentFullTrajectoryUpdate(Player):
-    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, *args, **kwargs):
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, model=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model = A2C(state_size + action_space, action_space)
+        if model:
+            self.model = model
+        else:
+            self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)

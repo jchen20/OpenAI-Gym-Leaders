@@ -17,7 +17,7 @@ from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
-from utils import set_random_seed
+from utils import set_random_seed,RandomTeamFromPool
 import teams
 
 
@@ -31,9 +31,9 @@ def main():
     # bf = 'gen8randombattle'
 
     adversarial_train = False
-
+    num_pokemon_in_team = 2
     # Initialize agent
-    team_used = teams.wall_six_team
+    team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team)
     emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)

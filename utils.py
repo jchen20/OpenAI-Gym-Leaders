@@ -4,11 +4,18 @@ import torch
 import random
 
 from networking import battle_against_wrapper
+from poke_env.teambuilder.teambuilder import Teambuilder
 
-def random_team(list, num_pokemon):
-    choices = random.choices(list,k=num_pokemon)
-    team_string = ''.join(choices)
-    return team_string
+
+class RandomTeamFromPool(Teambuilder):
+    def __init__(self, pokemon_list, num_pokemon):
+        self.pokemon_list = pokemon_list
+        self.num_pokemon = num_pokemon
+
+    def yield_team(self):
+        choices = random.sample(self.pokemon_list,k=self.num_pokemon)
+        team_string = ''.join(choices)
+        return self.join_team(self.parse_showdown_team(team_string))
 
 def one_hot(locations, size, weight=None):
     vector = np.zeros(size)
