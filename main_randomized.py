@@ -37,6 +37,7 @@ def main():
     team_used = teams.four_team
     emb_dim = 371
 
+    move_encoder = False
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
         agent = DQNAgent(emb_dim, len(env_player.action_space) - 8,
@@ -44,6 +45,7 @@ def main():
     else:
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
                                              len(env_player.action_space) - 8,
+                                             move_encoder=move_encoder,
                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
@@ -54,7 +56,7 @@ def main():
                               battle_format=bf, team=team_used)
         else:
             agent2 = A2CAgentFullTrajectoryUpdate(emb_dim, len(
-                env_player.action_space) - 8, battle_format=bf, team=team_used)
+                env_player.action_space) - 8, move_encoder=move_encoder, battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
