@@ -8,14 +8,18 @@ from poke_env.teambuilder.teambuilder import Teambuilder
 
 
 class RandomTeamFromPool(Teambuilder):
-    def __init__(self, pokemon_list, num_pokemon):
+    def __init__(self, pokemon_list, num_pokemon, reset_team_cycle=1):
         self.pokemon_list = pokemon_list
         self.num_pokemon = num_pokemon
+        self.reset_team_cycle = reset_team_cycle
+        self.ct = 0
+        self.current_team = None
 
     def yield_team(self):
-        choices = random.sample(self.pokemon_list,k=self.num_pokemon)
-        team_string = ''.join(choices)
-        return self.join_team(self.parse_showdown_team(team_string))
+        if self.ct % self.reset_team_cycle == 0:
+            choices = random.sample(self.pokemon_list,k=self.num_pokemon)
+            self.current_team = ''.join(choices)
+        return self.join_team(self.parse_showdown_team(self.current_team))
 
 def one_hot(locations, size, weight=None):
     vector = np.zeros(size)

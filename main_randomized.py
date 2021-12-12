@@ -31,9 +31,10 @@ def main():
     # bf = 'gen8randombattle'
 
     adversarial_train = False
-    num_pokemon_in_team = 2
+    num_pokemon_in_team = 4
     # Initialize agent
-    team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team)
+    # team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
+    team_used = teams.four_team
     emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
@@ -57,9 +58,10 @@ def main():
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
-    random_player = RandomPlayer(battle_format=bf, team=team_used)
-    max_dmg_player = MaxBasePowerPlayer(battle_format=bf, team=team_used)
-    heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=team_used)
+    opponent_team = RandomTeamFromPool(teams.random_pokemon_list, num_pokemon_in_team, reset_team_cycle=10)
+    random_player = RandomPlayer(battle_format=bf, team=opponent_team)
+    max_dmg_player = MaxBasePowerPlayer(battle_format=bf, team=opponent_team)
+    heur_player = SimpleHeuristicsPlayer(battle_format=bf, team=opponent_team)
 
     num_burn_in = 20 if method == 'dqn' else 0
     run_one_episode = lambda x: agent.train_one_episode(x, no_train=True)
