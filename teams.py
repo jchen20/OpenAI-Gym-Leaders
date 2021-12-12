@@ -153,3 +153,61 @@ Impish Nature
 - Roost
 - U-turn
 """
+
+wall_six_team = """
+Blissey (M) @ Heavy-Duty Boots
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+- Stealth Rock
+- Soft-Boiled
+- Seismic Toss
+- Toxic
+
+Corviknight (M) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 168 Def / 88 SpD
+Relaxed Nature
+- Defog
+- Roost
+- U-turn
+- Brave Bird
+
+Quagsire (M) @ Leftovers
+Ability: Unaware
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
+IVs: 0 Atk
+- Scald
+- Earthquake
+- Recover
+- Toxic
+
+Clefable (M) @ Leftovers
+Ability: Unaware
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Aromatherapy
+- Moonblast
+- Wish
+- Protect
+
+Toxapex (M) @ Black Sludge
+Ability: Regenerator
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Scald
+- Recover
+- Haze
+- Knock Off
+
+Hydreigon (M) @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 92 SpA / 252 Spe
+Timid Nature
+- Taunt
+- Dark Pulse
+- Earth Power
+- Roost
+"""

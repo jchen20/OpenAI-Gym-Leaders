@@ -33,7 +33,7 @@ def main():
     adversarial_train = False
 
     # Initialize agent
-    team_used = teams.three_team_1_4_5
+    team_used = teams.wall_six_team
     emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
