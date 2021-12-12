@@ -5,6 +5,11 @@ import random
 
 from networking import battle_against_wrapper
 
+def random_team(list, num_pokemon):
+    choices = random.choices(list,k=num_pokemon)
+    team_string = ''.join(choices)
+    return team_string
+
 def one_hot(locations, size, weight=None):
     vector = np.zeros(size)
     locations = np.array(locations) - 1
@@ -86,4 +91,3 @@ def get_valid_actions_mask(battle):
     mask[8:8+len(battle.available_switches)] = 1
 
     return mask
-
