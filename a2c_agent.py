@@ -63,13 +63,71 @@ class A2C(nn.Module):
         return torch.squeeze(values)
 
 
+class A2CMove(nn.Module):
+    def __init__(self, state_size, len_action_space):
+        super().__init__()
+        self.actor_move = nn.Sequential(
+            nn.Linear(112, 112),
+            nn.LeakyReLU(),
+            nn.Linear(112, 112),
+        )
+        
+        self.actor = nn.Sequential(
+            nn.Linear(state_size, 1024),
+            nn.LeakyReLU(),
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, len_action_space)
+        )
+        
+        self.critic_move = nn.Sequential(
+            nn.Linear(112, 112),
+            nn.LeakyReLU(),
+            nn.Linear(112, 112),
+        )
+        
+        self.critic = nn.Sequential(
+            nn.Linear(state_size, 1024),
+            nn.LeakyReLU(),
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 1)
+        )
+    
+    def forward(self, x, mask):
+        policy_move = self.actor_move(x[:, :112])
+        policy = self.actor(torch.cat((policy_move, x[:, 112:]), dim=-1))
+        policy *= mask
+        dist = Categorical(logits=policy)
+
+        values_move = self.critic_move(x[:, :112])
+        values = self.critic((torch.cat((values_move, x[:, 112:]), dim=-1)))
+        return dist, torch.squeeze(values)
+    
+    def actor_forward(self, x, mask):
+        policy_move = self.actor_move(x[:, :112])
+        policy = self.actor(torch.cat((policy_move, x[:, 112:]), dim=-1))
+        policy *= mask
+        dist = Categorical(logits=policy)
+        return dist
+    
+    def critic_forward(self, x):
+        values_move = self.critic_move(x[:, :112])
+        values = self.critic((torch.cat((values_move, x[:, 112:]), dim=-1)))
+        return torch.squeeze(values)
+
+
 class A2CAgentFullTrajectoryUpdate(Player):
-    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, model=None, *args, **kwargs):
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, model=None,
+                 move_encoder=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if model:
             self.model = model
         else:
-            self.model = A2C(state_size + action_space, action_space)
+            if move_encoder:
+                self.model = A2CMove(state_size + action_space, action_space)
+            else:
+                self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
