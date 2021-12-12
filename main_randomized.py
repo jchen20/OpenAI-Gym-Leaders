@@ -30,11 +30,11 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversarial_train = False
-    num_pokemon_in_team = 4
+    adversarial_train = True
+    num_pokemon_in_team = 6
     # Initialize agent
-    # team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
-    team_used = teams.four_team
+    team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
+    #team_used = teams.four_team
     emb_dim = 371
 
     move_encoder = False
@@ -144,10 +144,11 @@ def main():
                 agent.episode_reward = 0
             if adversarial_train and i != 0:
                 for m in range(train_self_weight):
-                    custom_play_against(
+                    custom_train_agents(
                         env_player=env_player,
                         env_algorithm=agent.train_one_episode,
-                        opponent=agent2
+                        opponent=env_player2,
+                        opponent_algorithm=agent2.train_one_episode
                     )
 
         # Evaluate
@@ -185,41 +186,41 @@ def main():
         agent_wins_cum = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
         
-        # if adversarial_train:
-        #     # Evaluate
-        #     print('\nAgent 2:')
-        #     print('\nEvaluating against Random Player:')
-        #     evaluate_model(
-        #         player=agent2,
-        #         opponent=random_player,
-        #         n_battles=n_eval_battles
-        #     )
-        #     if i == 0:
-        #         agent2_random_wins[i] = agent2.n_won_battles
-        #     else:
-        #         agent2_random_wins[i] = agent2.n_won_battles - agent2_wins_cum
-        #     agent2_wins_cum = agent2.n_won_battles
-        #     print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
-        #
-        #     print('\nEvaluating against Max Damage Player:')
-        #     evaluate_model(
-        #         player=agent2,
-        #         opponent=max_dmg_player,
-        #         n_battles=n_eval_battles
-        #     )
-        #     agent2_max_dmg_wins[i] = agent2.n_won_battles - agent2_wins_cum
-        #     agent2_wins_cum = agent2.n_won_battles
-        #     print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
-        #
-        #     print('\nEvaluating against Heuristic Player:')
-        #     evaluate_model(
-        #         player=agent2,
-        #         opponent=heur_player,
-        #         n_battles=n_eval_battles
-        #     )
-        #     agent2_heur_wins[i] = agent2.n_won_battles - agent2_wins_cum
-        #     agent2_wins_cum = agent2.n_won_battles
-        #     print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
+        if adversarial_train:
+            # Evaluate
+            print('\nAgent 2:')
+            print('\nEvaluating against Random Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=random_player,
+                n_battles=n_eval_battles
+            )
+            if i == 0:
+                agent2_random_wins[i] = agent2.n_won_battles
+            else:
+                agent2_random_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
+        
+            print('\nEvaluating against Max Damage Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=max_dmg_player,
+                n_battles=n_eval_battles
+            )
+            agent2_max_dmg_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
+        
+            print('\nEvaluating against Heuristic Player:')
+            evaluate_model(
+                player=agent2,
+                opponent=heur_player,
+                n_battles=n_eval_battles
+            )
+            agent2_heur_wins[i] = agent2.n_won_battles - agent2_wins_cum
+            agent2_wins_cum = agent2.n_won_battles
+            print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
 
     print(agent_random_wins)
     print(agent_max_dmg_wins)
