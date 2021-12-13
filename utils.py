@@ -21,6 +21,11 @@ class RandomTeamFromPool(Teambuilder):
             self.current_team = ''.join(choices)
         return self.join_team(self.parse_showdown_team(self.current_team))
 
+def random_team(pokemon_list,num_pokemon):
+    choices = random.sample(pokemon_list,num_pokemon)
+    team_str = ''.join(choices)
+    return team_str
+
 def one_hot(locations, size, weight=None):
     vector = np.zeros(size)
     locations = np.array(locations) - 1

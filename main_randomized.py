@@ -17,7 +17,7 @@ from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
-from utils import set_random_seed,RandomTeamFromPool
+from utils import set_random_seed,RandomTeamFromPool,random_team
 import teams
 
 
@@ -30,11 +30,12 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversarial_train = True
-    num_pokemon_in_team = 6
+    adversarial_train = False
+    num_pokemon_in_team = 4
     # Initialize agent
-    team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
+    #team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
     #team_used = teams.four_team
+    team_used = random_team(teams.random_pokemon_list,num_pokemon_in_team)
     emb_dim = 371
 
     move_encoder = False
@@ -93,7 +94,7 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 10
+    num_episodes = 20
     training_per_episode = 100
 
     train_max_weight = 1
