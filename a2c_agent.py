@@ -42,7 +42,8 @@ class A2C(nn.Module):
             # self.base,
             # nn.Linear(512, 128),
             # nn.LeakyReLU(),
-            nn.Linear(512, 1)
+            nn.Linear(512, len_action_space)
+            # nn.Linear(512, 1)
         )
     
     def forward(self, x, mask):
@@ -50,7 +51,8 @@ class A2C(nn.Module):
         policy *= mask
         dist = Categorical(logits=policy)
         values = self.critic(x)
-        return dist, torch.squeeze(values)
+        # return dist, torch.squeeze(values)
+        return dist, values
     
     def actor_forward(self, x, mask):
         policy = self.actor(x)
@@ -60,23 +62,24 @@ class A2C(nn.Module):
     
     def critic_forward(self, x):
         values = self.critic(x)
-        return torch.squeeze(values)
+        # return torch.squeeze(values)
+        return values
 
 
 class A2CAgentFullTrajectoryUpdate(Player):
-    def __init__(self, state_size, action_space, batch_size=16, gamma=0.99, gae_lambda=0.9, *args, **kwargs):
+    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.9, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-6)
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
+        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
-        self.eps = 0.05
-        self.entropy_beta = 0.05 / np.log(action_space)
-        self.alpha = 2
+        self.eps = 0.1
+        self.entropy_beta = 0.01 / np.log(action_space)
+        self.alpha = 50
         self.embed_battle = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -152,11 +155,11 @@ class A2CAgentFullTrajectoryUpdate(Player):
         n = len(state)
         lambda_scale = self.lambda_scale[:n]
         gamma_scale = self.gamma_scale[:n]
-        # prev_values = self.model.critic_forward(state)[range(n), action]
-        prev_values = self.model.critic_forward(state)
+        prev_values = self.model.critic_forward(state)[range(n), action]
+        # prev_values = self.model.critic_forward(state)
         next_values = reward
-        # next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
-        next_values[~terminal] += self.gamma * self.model.critic_forward(next_state[~terminal])
+        next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
+        # next_values[~terminal] += self.gamma * self.model.critic_forward(next_state[~terminal])
         td_error = next_values - prev_values
         td_error = td_error * lambda_scale * gamma_scale
         return td_error

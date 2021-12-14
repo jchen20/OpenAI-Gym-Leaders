@@ -31,7 +31,7 @@ def main():
     adversarial_train = False
 
     # Initialize agent
-    team_used = teams.six_team
+    team_used = teams.three_team_1_2_4
     emb_dim = 371
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
@@ -82,11 +82,11 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 20
-    training_per_episode = 100
+    num_episodes = 10
+    training_per_episode = 50
 
-    train_max_weight = 1
-    train_heuristic_weight = 3
+    train_max_weight = 2
+    train_heuristic_weight = 5
     train_self_weight = 2
 
     n_eval_battles = 50
