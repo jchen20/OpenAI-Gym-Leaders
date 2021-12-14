@@ -142,8 +142,10 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.lambda_scale = torch.Tensor([self.gamma**i for i in range(self.batch_size)][::-1], device=self.device)
-        self.gamma_scale = torch.Tensor([self.gae_lambda**i for i in range(self.batch_size)][::-1], device=self.device)
+        self.lambda_scale = torch.tensor([self.gamma**i for i in range(self.batch_size)][::-1], device=self.device)
+        self.gamma_scale = torch.tensor([self.gae_lambda**i for i in range(self.batch_size)][::-1], device=self.device)
+        self.lambda_scale = self.lambda_scale.float()
+        self.gamma_scale = self.gamma_scale.float()
         self.last_action = None
 
         self.model.to(self.device)
@@ -158,7 +160,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         rwd = torch.tensor(rwd, dtype=torch.float32).to(self.device)
         terminal = torch.tensor(terminal, dtype=bool).to(self.device)
 
-        prev_actions_state = torch.cat((torch.zeros(1, self.action_space), F.one_hot(action[:-1], self.action_space).float()), dim=0)
+        prev_actions_state = torch.cat((torch.zeros(1, self.action_space, device=self.device), F.one_hot(action[:-1], self.action_space).float()), dim=0)
         prev_actions_next_state = F.one_hot(action, self.action_space).float()
         state = torch.cat((state, prev_actions_state), dim=1)
         next_state = torch.cat((next_state, prev_actions_next_state), dim=1)
