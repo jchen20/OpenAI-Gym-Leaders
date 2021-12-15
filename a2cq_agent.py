@@ -82,6 +82,8 @@ class A2CQAgentFullTrajectoryUpdate(Player):
         self.median_max_probs = []
         self.steps = 0
         self.cum_train_steps = []
+        
+        self.force_non_greedy = False
 
         self.model.to(self.device)
     
@@ -187,5 +189,5 @@ class A2CQAgentFullTrajectoryUpdate(Player):
     def choose_move(self, battle):
         self.model.eval()
         state, mask = self.embed_battle(battle)
-        action = self._best_action(state, mask, greedy=True)
+        action = self._best_action(state, mask, greedy=(not self.force_non_greedy))
         return player_action_to_move(self, action, battle)

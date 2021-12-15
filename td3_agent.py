@@ -85,7 +85,7 @@ class TD3AgentFullTrajectoryUpdate(Player):
         self.gae_lambda = gae_lambda
         self.eps = 0.1
         self.entropy_beta = 0.01 / np.log(action_space)
-        self.alpha = 50
+        self.alpha = 20
         self.embed_battle = None
         self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -99,6 +99,8 @@ class TD3AgentFullTrajectoryUpdate(Player):
         self.median_max_probs = []
         self.steps = 0
         self.cum_train_steps = []
+        
+        self.force_non_greedy = False
 
         self.model.to(self.device)
     
@@ -210,5 +212,5 @@ class TD3AgentFullTrajectoryUpdate(Player):
     def choose_move(self, battle):
         self.model.eval()
         state, mask = self.embed_battle(battle)
-        action = self._best_action(state, mask, greedy=True)
+        action = self._best_action(state, mask, greedy=(not self.force_non_greedy))
         return player_action_to_move(self, action, battle)

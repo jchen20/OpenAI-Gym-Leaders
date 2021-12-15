@@ -23,7 +23,7 @@ import teams
 
 
 def main():
-    method = 'a2c'
+    method = 'td3'
 
     set_random_seed(0)
 
@@ -133,6 +133,7 @@ def main():
         print(f'Training episode {i}')
         if adversarial_train:
             agent2.model = copy.deepcopy(agent.model)
+            agent2.force_non_greedy = True
         # Train env_player
         for j in range(training_per_episode):
             for k in range(train_max_weight):
@@ -153,7 +154,7 @@ def main():
                 if l + 1 == train_heuristic_weight:
                     agent_heur_rewards[i*training_per_episode + j] = agent.episode_reward
                 agent.episode_reward = 0
-            if adversarial_train and i != 0:
+            if adversarial_train:
                 for m in range(train_self_weight):
                     custom_train_agents(
                         env_player=env_player,

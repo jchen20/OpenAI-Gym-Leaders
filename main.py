@@ -43,7 +43,7 @@ def main():
     if method == 'dqn':
         agent = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                          battle_format=bf, team=team_used)
-    elif method == 'q2c':
+    elif method == 'a2c':
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
                                              len(env_player.action_space) - 12,
                                              move_encoder=move_encoder,
@@ -112,10 +112,10 @@ def main():
     #         )
 
     num_episodes = 10
-    training_per_episode = 50
+    training_per_episode = 100
 
-    train_max_weight = 1
-    train_heuristic_weight = 3
+    train_max_weight = 0
+    train_heuristic_weight = 0
     train_self_weight = 2
 
     n_eval_battles = 50
@@ -139,6 +139,7 @@ def main():
         print(f'Training episode {i}')
         if adversarial_train:
             agent2.model = copy.deepcopy(agent.model)
+            agent2.force_non_greedy = True
         # Train env_player
         for j in range(training_per_episode):
             for k in range(train_max_weight):
@@ -159,7 +160,7 @@ def main():
                 if l + 1 == train_heuristic_weight:
                     agent_heur_rewards[i*training_per_episode + j] = agent.episode_reward
                 agent.episode_reward = 0
-            if adversarial_train and i != 0:
+            if adversarial_train:
                 for m in range(train_self_weight):
                     custom_play_against(
                         env_player=env_player,
@@ -253,11 +254,13 @@ def main():
     plt.legend()
 
     fig, ax1 = plt.subplots()
-    ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', label='Agent Winrate against Heuristic')
+    ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-b', label='Agent Winrate against Heuristic')
+    ax1.plot(agent.cum_train_steps, agent_max_dmg_wins / n_eval_battles, '-g', label='Agent Winrate against Max Dmg')
+    ax1.plot(agent.cum_train_steps, agent_random_wins / n_eval_battles, '-r', label='Agent Winrate against Random')
     ax1.set_xlabel('steps')
     ax1.set_ylabel('win rate')
     ax2 = ax1.twinx()
-    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.5, label='Median Max Probability Action Choice')
+    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.1, label='Median Max Probability Action Choice')
     ax2.set_ylabel('max action probability')
     fig.tight_layout()
 

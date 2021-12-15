@@ -161,6 +161,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.steps = 0
         self.cum_train_steps = []
 
+        self.force_non_greedy = False
+
         self.model.to(self.device)
     
     def _train_one_step(self, batch):
@@ -266,5 +268,5 @@ class A2CAgentFullTrajectoryUpdate(Player):
     def choose_move(self, battle):
         self.model.eval()
         state, mask = self.embed_battle(battle)
-        action = self._best_action(state, mask, greedy=True)
+        action = self._best_action(state, mask, greedy=(not self.force_non_greedy))
         return player_action_to_move(self, action, battle)
