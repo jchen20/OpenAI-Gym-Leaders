@@ -276,9 +276,8 @@ IVs: 0 Atk
 """
 
 psyspam_4 = """
-Alakazam-Mega @ Alakazite
+Alakazam @ Life Orb
 Ability: Inner Focus
-Level: 50
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
@@ -289,7 +288,6 @@ IVs: 0 Atk
 
 Tapu Lele @ Terrain Extender
 Ability: Psychic Surge
-Level: 50
 EVs: 252 HP / 204 SpA / 52 Spe
 Modest Nature
 IVs: 0 Atk
@@ -298,8 +296,8 @@ IVs: 0 Atk
 - Thunderbolt
 - Nature's Madness
 
-Heatran @ Steelium Z Ability: Flash Fire
-Level: 50
+Heatran @ Leftovers
+Ability: Flash Fire
 EVs: 252 HP / 252 SpA / 4 SpD
 Modest Nature
 IVs: 0 Atk
@@ -310,7 +308,6 @@ IVs: 0 Atk
 
 Togekiss @ Leftovers
 Ability: Serene Grace
-Level: 50
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 IVs: 0 Atk
