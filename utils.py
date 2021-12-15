@@ -7,6 +7,20 @@ from networking import battle_against_wrapper
 from poke_env.teambuilder.teambuilder import Teambuilder
 
 
+class RandomTeamFromTeamPool(Teambuilder):
+    def __init__(self, pokemon_team_list, reset_team_cycle=1):
+        self.pokemon_team_list = pokemon_team_list
+        self.reset_team_cycle = reset_team_cycle
+        self.ct = 0
+        self.current_team = None
+
+    def yield_team(self):
+        if self.ct % self.reset_team_cycle == 0:
+            self.current_team = random.sample(self.pokemon_team_list,k=1)[0]
+        self.ct += 1
+        return self.join_team(self.parse_showdown_team(self.current_team))
+
+
 class RandomTeamFromPool(Teambuilder):
     def __init__(self, pokemon_list, num_pokemon, reset_team_cycle=1):
         self.pokemon_list = pokemon_list
@@ -19,6 +33,7 @@ class RandomTeamFromPool(Teambuilder):
         if self.ct % self.reset_team_cycle == 0:
             choices = random.sample(self.pokemon_list,k=self.num_pokemon)
             self.current_team = ''.join(choices)
+        self.ct += 1
         return self.join_team(self.parse_showdown_team(self.current_team))
 
 def random_team(pokemon_list,num_pokemon):
