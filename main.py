@@ -15,6 +15,7 @@ from poke_env.player.battle_order import BattleOrder
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
+from a2cq_agent import A2CQAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
 from utils import set_random_seed
@@ -41,11 +42,15 @@ def main():
     if method == 'dqn':
         agent = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                          battle_format=bf, team=team_used)
-    else:
+    elif method == 'q2c':
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
                                              len(env_player.action_space) - 12,
                                              move_encoder=move_encoder,
                                              battle_format=bf, team=team_used)
+    elif method == 'a2cq':
+        agent = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                              len(env_player.action_space) - 12,
+                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     if adversarial_train:
@@ -53,9 +58,15 @@ def main():
         if method == 'dqn':
             agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                               battle_format=bf, team=team_used)
-        else:
-            agent2 = A2CAgentFullTrajectoryUpdate(emb_dim, len(
-                env_player.action_space) - 12, move_encoder=move_encoder, battle_format=bf, team=team_used)
+        elif method == 'a2c':
+            agent2 = A2CAgentFullTrajectoryUpdate(emb_dim,
+                                                  len(env_player.action_space) - 12,
+                                                  move_encoder=move_encoder,
+                                                  battle_format=bf, team=team_used)
+        elif method == 'a2cq':
+            agent2 = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                                   len(env_player.action_space) - 12,
+                                                   battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
@@ -92,7 +103,7 @@ def main():
     #         )
 
     num_episodes = 10
-    training_per_episode = 100
+    training_per_episode = 50
 
     train_max_weight = 1
     train_heuristic_weight = 3
