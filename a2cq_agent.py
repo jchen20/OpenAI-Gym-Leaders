@@ -188,5 +188,4 @@ class A2CQAgentFullTrajectoryUpdate(Player):
         self.model.eval()
         state, mask = self.embed_battle(battle)
         action = self._best_action(state, mask, greedy=True)
-        self.last_action = action
         return player_action_to_move(self, action, battle)

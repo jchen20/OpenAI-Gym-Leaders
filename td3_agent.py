@@ -62,8 +62,10 @@ class TD3(nn.Module):
         values = self.critic_2(x)
         return values
     
-    def clipped_max(self, q_values, sigma):
-        return sigma * torch.median(q_values, dim=-1)[0] + (1 - sigma) * torch.max(q_values, dim=-1)[0]
+    def max_critic(self, q_values, clipped=False, sigma=None):
+        if clipped:
+            return sigma * torch.median(q_values, dim=-1)[0] + (1 - sigma) * torch.max(q_values, dim=-1)[0]
+        return torch.max(q_values, dim=-1)[0]
 
 
 class TD3AgentFullTrajectoryUpdate(Player):
@@ -82,7 +84,7 @@ class TD3AgentFullTrajectoryUpdate(Player):
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.02 / np.log(action_space)
+        self.entropy_beta = 0.01 / np.log(action_space)
         self.alpha = 50
         self.embed_battle = None
         self.episode_reward = 0
@@ -118,20 +120,22 @@ class TD3AgentFullTrajectoryUpdate(Player):
         with torch.set_grad_enabled(True):
             self.optimizer.zero_grad()
             dist = self.model.actor_forward(state, mask)
-            td_lambda_err = self.td_lambda_err(state, action, next_state, rwd, terminal)
+            td_lambda_err_1, td_lambda_err_2 = self.td_lambda_err(state, action, next_state, rwd, terminal)
             log_probs = dist.log_prob(action)
-            actor_losses = -log_probs * td_lambda_err.detach()
+            actor_losses = -log_probs * td_lambda_err_1.detach()
             mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
-            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + F.relu(-td_lambda_err.detach()))
+            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + F.relu(-td_lambda_err_1.detach()))
             actor_loss = (actor_losses + ent_scale).mean()
-            critic_loss = td_lambda_err.pow(2).mean()   
-            loss = actor_loss + self.alpha * critic_loss
+            critic_loss_1 = td_lambda_err_1.pow(2).mean()
+            critic_loss_2 = td_lambda_err_2.pow(2).mean()
+            loss = actor_loss + self.alpha * (critic_loss_1 + critic_loss_2)
 
             med_max_prob = torch.median(torch.max(dist.probs, dim=1)[0]).item()
             self.median_max_probs.append(med_max_prob)
             self.steps += 1
             if random.random() < 0.01:
-                print(f'{actor_loss.item():.2E}', f'{critic_loss.item():.2E}', f'{med_max_prob:.2E}')
+                print(f'{actor_loss.item():.2E}', f'{critic_loss_1.item():.2E}', \
+                    f'{critic_loss_2.item():.2E}', f'{med_max_prob:.2E}')
             
             loss.backward()
             self.optimizer.step()
@@ -171,13 +175,17 @@ class TD3AgentFullTrajectoryUpdate(Player):
         n = len(state)
         lambda_scale = self.lambda_scale[:n]
         gamma_scale = self.gamma_scale[:n]
-        prev_values = self.model.critic_forward(state)[range(n), action]
-        next_values = reward
-        next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
+        prev_values_1 = self.model.critic_1_forward(state)[range(n), action]
+        prev_values_2 = self.model.critic_2_forward(state)[range(n), action]
+        next_values_1 = reward
+        next_values_2 = torch.clone(reward)
+        next_values_1[~terminal] += self.gamma * self.model.max_critic(self.model.critic_1_forward(next_state[~terminal]))
+        next_values_2[~terminal] += self.gamma * self.model.max_critic(self.model.critic_2_forward(next_state[~terminal]))
+        next_values = torch.minimum(next_values_1, next_values_2)
         
-        td_error = next_values - prev_values
-        td_error = td_error * lambda_scale * gamma_scale
-        return td_error
+        td_error_1 = (next_values - prev_values_1) * lambda_scale * gamma_scale
+        td_error_2 = (next_values - prev_values_2) * lambda_scale * gamma_scale
+        return td_error_1, td_error_2
 
     
     def set_embed_battle(self, embed_battle):
@@ -203,5 +211,4 @@ class TD3AgentFullTrajectoryUpdate(Player):
         self.model.eval()
         state, mask = self.embed_battle(battle)
         action = self._best_action(state, mask, greedy=True)
-        self.last_action = action
         return player_action_to_move(self, action, battle)

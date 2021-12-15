@@ -16,6 +16,7 @@ from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from a2cq_agent import A2CQAgentFullTrajectoryUpdate
+from td3_agent import TD3AgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
 from utils import set_random_seed
@@ -23,7 +24,7 @@ import teams
 
 
 def main():
-    method = 'a2c'
+    method = 'td3'
 
     set_random_seed(0)
 
@@ -51,6 +52,10 @@ def main():
         agent = A2CQAgentFullTrajectoryUpdate(emb_dim,
                                               len(env_player.action_space) - 12,
                                               battle_format=bf, team=team_used)
+    elif method == 'td3':
+        agent = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                             len(env_player.action_space) - 12,
+                                             battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     if adversarial_train:
@@ -67,6 +72,10 @@ def main():
             agent2 = A2CQAgentFullTrajectoryUpdate(emb_dim,
                                                    len(env_player.action_space) - 12,
                                                    battle_format=bf, team=team_used)
+        elif method == 'td3':
+            agent2 = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                                  len(env_player.action_space) - 12,
+                                                  battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
