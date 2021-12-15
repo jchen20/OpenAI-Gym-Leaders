@@ -80,19 +80,19 @@ def main():
             env_algorithm=run_one_episode,
             opponent=max_dmg_player,
         )
-    if adversarial_train:
-        for i in range(num_burn_in):
-            print(f'Burn in episode {i}')
-            custom_play_against(
-                env_player=env_player2,
-                env_algorithm=run_one_episode,
-                opponent=heur_player,
-            )
-            custom_play_against(
-                env_player=env_player2,
-                env_algorithm=run_one_episode,
-                opponent=max_dmg_player,
-            )
+    # if adversarial_train:
+    #     for i in range(num_burn_in):
+    #         print(f'Burn in episode {i}')
+    #         custom_play_against(
+    #             env_player=env_player2,
+    #             env_algorithm=run_one_episode,
+    #             opponent=heur_player,
+    #         )
+    #         custom_play_against(
+    #             env_player=env_player2,
+    #             env_algorithm=run_one_episode,
+    #             opponent=max_dmg_player,
+    #         )
 
     num_episodes = 10
     training_per_episode = 100
@@ -104,7 +104,7 @@ def main():
     n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)
     trainings = np.arange(1, num_episodes*training_per_episode + 1)
-    agent_wins_cum = 0
+
     agent_random_wins = np.zeros(num_episodes, dtype=int)
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
@@ -113,7 +113,6 @@ def main():
     agent_max_dmg_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
     agent_heur_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
 
-    agent2_wins_cum = 0
     agent2_random_wins = np.zeros(num_episodes, dtype=int)
     agent2_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent2_heur_wins = np.zeros(num_episodes, dtype=int)
@@ -160,12 +159,9 @@ def main():
             opponent=random_player,
             n_battles=n_eval_battles
         )
-        if i == 0:
-            agent_random_wins[i] = agent.n_won_battles
-        else:
-            agent_random_wins[i] = agent.n_won_battles - agent_wins_cum
-        agent_wins_cum = agent.n_won_battles
+        agent_random_wins[i] = agent.n_won_battles
         print(f'Wins: {agent_random_wins[i]} out of {n_eval_battles}')
+        agent.reset_battles()
 
         print('\nEvaluating against Max Damage Player:')
         evaluate_model(
@@ -173,9 +169,9 @@ def main():
             opponent=max_dmg_player,
             n_battles=n_eval_battles
         )
-        agent_max_dmg_wins[i] = agent.n_won_battles - agent_wins_cum
-        agent_wins_cum = agent.n_won_battles
+        agent_max_dmg_wins[i] = agent.n_won_battles
         print(f'Wins: {agent_max_dmg_wins[i]} out of {n_eval_battles}')
+        agent.reset_battles()
 
         print('\nEvaluating against Heuristic Player:')
         evaluate_model(
@@ -183,45 +179,42 @@ def main():
             opponent=heur_player,
             n_battles=n_eval_battles
         )
-        agent_heur_wins[i] = agent.n_won_battles - agent_wins_cum
-        agent_wins_cum = agent.n_won_battles
+        agent_heur_wins[i] = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
+        agent.reset_battles()
         
-        if adversarial_train:
-            # Evaluate
-            print('\nAgent 2:')
-            print('\nEvaluating against Random Player:')
-            evaluate_model(
-                player=agent2,
-                opponent=random_player,
-                n_battles=n_eval_battles
-            )
-            if i == 0:
-                agent2_random_wins[i] = agent2.n_won_battles
-            else:
-                agent2_random_wins[i] = agent2.n_won_battles - agent2_wins_cum
-            agent2_wins_cum = agent2.n_won_battles
-            print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
+        # if adversarial_train:
+        #     # Evaluate
+        #     print('\nAgent 2:')
+        #     print('\nEvaluating against Random Player:')
+        #     evaluate_model(
+        #         player=agent2,
+        #         opponent=random_player,
+        #         n_battles=n_eval_battles
+        #     )
+        #     agent2_random_wins[i] = agent2.n_won_battles
+        #     print(f'Wins: {agent2_random_wins[i]} out of {n_eval_battles}')
+        #     agent2.reset_battles()
         
-            print('\nEvaluating against Max Damage Player:')
-            evaluate_model(
-                player=agent2,
-                opponent=max_dmg_player,
-                n_battles=n_eval_battles
-            )
-            agent2_max_dmg_wins[i] = agent2.n_won_battles - agent2_wins_cum
-            agent2_wins_cum = agent2.n_won_battles
-            print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
+        #     print('\nEvaluating against Max Damage Player:')
+        #     evaluate_model(
+        #         player=agent2,
+        #         opponent=max_dmg_player,
+        #         n_battles=n_eval_battles
+        #     )
+        #     agent2_max_dmg_wins[i] = agent2.n_won_battles
+        #     print(f'Wins: {agent2_max_dmg_wins[i]} out of {n_eval_battles}')
+        #     agent2.reset_battles()
         
-            print('\nEvaluating against Heuristic Player:')
-            evaluate_model(
-                player=agent2,
-                opponent=heur_player,
-                n_battles=n_eval_battles
-            )
-            agent2_heur_wins[i] = agent2.n_won_battles - agent2_wins_cum
-            agent2_wins_cum = agent2.n_won_battles
-            print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
+        #     print('\nEvaluating against Heuristic Player:')
+        #     evaluate_model(
+        #         player=agent2,
+        #         opponent=heur_player,
+        #         n_battles=n_eval_battles
+        #     )
+        #     agent2_heur_wins[i] = agent2.n_won_battles
+        #     print(f'Wins: {agent2_heur_wins[i]} out of {n_eval_battles}')
+        #     agent2.reset_battles()
 
     print(agent_random_wins)
     print(agent_max_dmg_wins)

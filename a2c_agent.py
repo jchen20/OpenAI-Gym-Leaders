@@ -204,7 +204,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         done = False
         state, mask = env.reset()
         one_batch = deque([], maxlen=self.batch_size)
-        train_prob = 0.2
+        train_prob = 0.3
         self.last_action = None
         
         self.model.train()
