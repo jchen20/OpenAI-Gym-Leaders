@@ -17,7 +17,7 @@ from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
-from utils import set_random_seed,RandomTeamFromPool,random_team
+from utils import set_random_seed, RandomTeamFromPool, random_team
 import teams
 
 
@@ -33,19 +33,19 @@ def main():
     adversarial_train = False
     num_pokemon_in_team = 4
     # Initialize agent
-    #team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
+    team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
     #team_used = teams.four_team
-    team_used = random_team(teams.random_pokemon_list,num_pokemon_in_team)
-    emb_dim = 371
+    #team_used = random_team(teams.random_pokemon_list,num_pokemon_in_team)
+    emb_dim = 315
 
     move_encoder = False
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
-        agent = DQNAgent(emb_dim, len(env_player.action_space) - 8,
+        agent = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                          battle_format=bf, team=team_used)
     else:
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
-                                             len(env_player.action_space) - 8,
+                                             len(env_player.action_space) - 12,
                                              move_encoder=move_encoder,
                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
@@ -53,11 +53,11 @@ def main():
     if adversarial_train:
         env_player2 = RLEnvPlayer(battle_format=bf, team=team_used)
         if method == 'dqn':
-            agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 8,
+            agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                               battle_format=bf, team=team_used)
         else:
             agent2 = A2CAgentFullTrajectoryUpdate(emb_dim, len(
-                env_player.action_space) - 8, move_encoder=move_encoder, battle_format=bf, team=team_used)
+                env_player.action_space) - 12, move_encoder=move_encoder, battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player

@@ -33,27 +33,29 @@ def main():
     adversarial_train = False
 
     # Initialize agent
-    team_used = teams.wall_six_team
-    emb_dim = 371
+    team_used = teams.four_team
+    emb_dim = 315
+    move_encoder = False
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
     if method == 'dqn':
-        agent = DQNAgent(emb_dim, len(env_player.action_space) - 8,
+        agent = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                          battle_format=bf, team=team_used)
     else:
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
-                                             len(env_player.action_space) - 8,
+                                             len(env_player.action_space) - 12,
+                                             move_encoder=move_encoder,
                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     if adversarial_train:
         env_player2 = RLEnvPlayer(battle_format=bf, team=team_used)
         if method == 'dqn':
-            agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 8,
+            agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                               battle_format=bf, team=team_used)
         else:
             agent2 = A2CAgentFullTrajectoryUpdate(emb_dim, len(
-                env_player.action_space) - 8, battle_format=bf, team=team_used)
+                env_player.action_space) - 12, move_encoder=move_encoder, battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
@@ -145,6 +147,7 @@ def main():
                         env_algorithm=agent.train_one_episode,
                         opponent=agent2
                     )
+        agent.cum_train_steps.append(agent.steps)
 
         # Evaluate
         print('\nAgent 1:')
@@ -222,17 +225,25 @@ def main():
     print(agent_heur_wins)
 
     plt.figure()
-    plt.plot(episodes, agent_random_wins, '-b',
+    plt.plot(episodes, agent_random_wins, '-',
              label="Agent Wins against Random")
-    plt.plot(episodes, agent_max_dmg_wins, '-g',
+    plt.plot(episodes, agent_max_dmg_wins, '-',
              label="Agent Wins against Max Dmg")
-    plt.plot(episodes, agent_heur_wins, '-r',
+    plt.plot(episodes, agent_heur_wins, '-',
              label="Agent Wins against Heuristic")
     plt.xlabel("Episode")
     plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
     plt.legend()
-    plt.show()
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', label='Agent Winrate against Heuristic')
+    ax1.set_xlabel('steps')
+    ax1.set_ylabel('win rate')
+    ax2 = ax1.twinx()
+    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.5, label='Median Max Probability Action Choice')
+    ax2.set_ylabel('max action probability')
+    fig.tight_layout()
 
     plt.figure()
     plt.semilogy(trainings, agent_max_dmg_rewards, '-g',

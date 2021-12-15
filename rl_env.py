@@ -43,29 +43,57 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
                     moves_dmg_multiplier[i] *= 1.5 # STAB
             moves_heal[i] = move.heal
         
-        dynamax_moves_base_power = -np.ones(4, dtype=int)
-        dynamax_moves_dmg_multiplier = np.zeros(4)
-        dynamax_moves_accuracy = np.zeros(4)
-        dynamax_moves_categories = np.zeros(4, dtype=int)
-        dynamax_moves_status = np.zeros(4, dtype=int)
-        dynamax_moves_heal = np.zeros(4, dtype=int)
-        for i, move in enumerate(battle.available_moves):
-            move = move.dynamaxed
-            dynamax_moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
-            dynamax_moves_accuracy[i] = move.accuracy
-            dynamax_moves_categories[i] = move.category.value
-            if move.status:
-                dynamax_moves_status[i] = move.status.value
-            else:
-                dynamax_moves_status[i] = 0
-            if move.type:
-                dynamax_moves_dmg_multiplier[i] = move.type.damage_multiplier(
-                    battle.opponent_active_pokemon.type_1,
-                    battle.opponent_active_pokemon.type_2,
-                )
-                if move.type in battle.active_pokemon.types:
-                    dynamax_moves_dmg_multiplier[i] *= 1.5 # STAB
-            dynamax_moves_heal[i] = move.heal
+        # dynamax_moves_base_power = -np.ones(4, dtype=int)
+        # dynamax_moves_dmg_multiplier = np.zeros(4)
+        # dynamax_moves_accuracy = np.zeros(4)
+        # dynamax_moves_categories = np.zeros(4, dtype=int)
+        # dynamax_moves_status = np.zeros(4, dtype=int)
+        # dynamax_moves_heal = np.zeros(4, dtype=int)
+        # for i, move in enumerate(battle.available_moves):
+        #     move = move.dynamaxed
+        #     dynamax_moves_base_power[i] = move.base_power / 100 # Simple rescaling to facilitate learning
+        #     dynamax_moves_accuracy[i] = move.accuracy
+        #     dynamax_moves_categories[i] = move.category.value
+        #     if move.status:
+        #         dynamax_moves_status[i] = move.status.value
+        #     else:
+        #         dynamax_moves_status[i] = 0
+        #     if move.type:
+        #         dynamax_moves_dmg_multiplier[i] = move.type.damage_multiplier(
+        #             battle.opponent_active_pokemon.type_1,
+        #             battle.opponent_active_pokemon.type_2,
+        #         )
+        #         if move.type in battle.active_pokemon.types:
+        #             dynamax_moves_dmg_multiplier[i] *= 1.5 # STAB
+        #     dynamax_moves_heal[i] = move.heal
+
+        moves_categories -= 1
+        category_matrix = np.zeros((4, 3))
+        category_matrix[np.arange(4), moves_categories] = 1
+        
+        status_matrix = np.zeros((4, 7))
+        for i, status_type in enumerate(moves_status):
+            if status_type != 0:
+                status_matrix[i, status_type - 1] = 1
+
+        moves_matrix = np.concatenate([
+            moves_base_power,
+            moves_dmg_multiplier,
+            moves_accuracy,
+            moves_heal,
+            category_matrix.flatten(),
+            status_matrix.flatten(),
+        ])
+        moves_matrix = moves_matrix.reshape((14, 4)).T
+
+        # dynamax_moves_categories -= 1
+        # dynamax_category_matrix = np.zeros((4, 3))
+        # dynamax_category_matrix[np.arange(4), dynamax_moves_categories] = 1
+
+        # dynamax_status_matrix = np.zeros((4, 7))
+        # for i, status_type in enumerate(dynamax_moves_status):
+        #     if status_type != 0:
+        #         dynamax_status_matrix[i, status_type - 1] = 1
 
         # We count how many pokemons have not fainted in each team
         remaining_mon_team = len([mon for mon in battle.team.values() if mon.fainted]) / 6
@@ -78,24 +106,6 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
     
         opponent_types = [t.value for t in battle.opponent_active_pokemon.types if t is not None]
         opponent_one_hot_types = one_hot(opponent_types, 18)
-        
-        moves_categories -= 1
-        category_matrix = np.zeros((4, 3))
-        category_matrix[np.arange(4), moves_categories] = 1
-        
-        status_matrix = np.zeros((4, 7))
-        for i, status_type in enumerate(moves_status):
-            if status_type != 0:
-                status_matrix[i, status_type - 1] = 1
-
-        dynamax_moves_categories -= 1
-        dynamax_category_matrix = np.zeros((4, 3))
-        dynamax_category_matrix[np.arange(4), dynamax_moves_categories] = 1
-
-        dynamax_status_matrix = np.zeros((4, 7))
-        for i, status_type in enumerate(dynamax_moves_status):
-            if status_type != 0:
-                dynamax_status_matrix[i, status_type - 1] = 1
         
         curr_stats = battle.active_pokemon.stats
         curr_stats_array = np.zeros(5)
@@ -176,18 +186,19 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
         
         # Final vector with many components
         state_vector = np.concatenate([
-            moves_base_power,
-            moves_dmg_multiplier,
-            moves_accuracy,
-            moves_heal,
-            category_matrix.flatten(),
-            status_matrix.flatten(),
-            dynamax_moves_base_power,
-            dynamax_moves_dmg_multiplier,
-            dynamax_moves_accuracy,
-            dynamax_moves_heal,
-            dynamax_category_matrix.flatten(),
-            dynamax_status_matrix.flatten(),
+            # moves_base_power,
+            # moves_dmg_multiplier,
+            # moves_accuracy,
+            # moves_heal,
+            # category_matrix.flatten(),
+            # status_matrix.flatten(),
+            moves_matrix.flatten(),
+            # dynamax_moves_base_power,
+            # dynamax_moves_dmg_multiplier,
+            # dynamax_moves_accuracy,
+            # dynamax_moves_heal,
+            # dynamax_category_matrix.flatten(),
+            # dynamax_status_matrix.flatten(),
             curr_one_hot_types,
             [curr_level, curr_hp],
             curr_stats_array,

@@ -58,11 +58,11 @@ def player_action_to_move(player, action, battle):
         The battle will be forfeited.
     0 <= action < 4:
         The actionth available move in battle.available_moves is executed.
-    4 <= action < 8:
+    [DEPRECATED] 4 <= action < 8:
         The action - 4th available move in battle.available_moves is executed,
         while dynamaxing.
-    8 <= action < 14
-        The action - 8th available switch in battle.available_switches is executed.
+    4 <= action < 10
+        The action - 4th available switch in battle.available_switches is executed.
     If the proposed action is illegal, a random legal move is performed.
     :param action: The action to convert.
     :type action: int
@@ -79,15 +79,15 @@ def player_action_to_move(player, action, battle):
             and not battle.force_switch
     ):
         return player.create_order(battle.available_moves[action])
-    elif (
-            battle.can_dynamax
-            and 0 <= action - 4 < len(battle.available_moves)
-            and not battle.force_switch
-    ):
-        return player.create_order(battle.available_moves[action - 4],
-                                    dynamax=True)
-    elif 0 <= action - 8 < len(battle.available_switches):
-        return player.create_order(battle.available_switches[action - 8])
+    # elif (
+    #         battle.can_dynamax
+    #         and 0 <= action - 4 < len(battle.available_moves)
+    #         and not battle.force_switch
+    # ):
+    #     return player.create_order(battle.available_moves[action - 4],
+    #                                 dynamax=True)
+    elif 0 <= action - 4 < len(battle.available_switches):
+        return player.create_order(battle.available_switches[action - 4])
     else:
         return player.choose_random_move(battle)
 
@@ -98,12 +98,12 @@ def convert_real_action_to_pokeenv_action(action):
         return action - 8
 
 def get_valid_actions_mask(battle):
-    mask = np.zeros(14)
+    mask = np.zeros(10)
     if not battle.force_switch:
         ell = len(battle.available_moves)
         mask[0:ell] = 1
-        if battle.can_dynamax:
-            mask[4:4+ell] = 1
-    mask[8:8+len(battle.available_switches)] = 1
+        # if battle.can_dynamax:
+        #     mask[4:4+ell] = 1
+    mask[4:4+len(battle.available_switches)] = 1
 
     return mask

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
+from torch.distributions.kl import kl_divergence
 import numpy as np
 from poke_env.player.player import Player, BattleOrder
 from poke_env.player.battle_order import ForfeitBattleOrder
@@ -67,53 +68,61 @@ class A2CMove(nn.Module):
     def __init__(self, state_size, len_action_space):
         super().__init__()
         self.actor_move = nn.Sequential(
-            nn.Linear(112, 112),
+            nn.Linear(14, 56),
             nn.LeakyReLU(),
-            nn.Linear(112, 112),
+            nn.Linear(56, 56),
         )
         
-        self.actor = nn.Sequential(
-            nn.Linear(state_size, 1024),
+        self.actor_1 = nn.Sequential(
+            nn.Linear(state_size - 56, 1024 - 56*4),
             nn.LeakyReLU(),
+        )
+        self.actor_2 = nn.Sequential(
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
             nn.Linear(512, len_action_space)
         )
         
         self.critic_move = nn.Sequential(
-            nn.Linear(112, 112),
+            nn.Linear(14, 56),
             nn.LeakyReLU(),
-            nn.Linear(112, 112),
+            nn.Linear(56, 56),
         )
         
-        self.critic = nn.Sequential(
-            nn.Linear(state_size, 1024),
+        self.critic_1 = nn.Sequential(
+            nn.Linear(state_size - 56, 1024 - 56*4),
             nn.LeakyReLU(),
+        )
+        self.critic_2 = nn.Sequential(
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
             nn.Linear(512, 1)
         )
     
     def forward(self, x, mask):
-        policy_move = self.actor_move(x[:, :112])
-        policy = self.actor(torch.cat((policy_move, x[:, 112:]), dim=-1))
+        policy_move = self.actor_move(x[:, :56].reshape((-1, 4, 14))).flatten(start_dim=1)
+        policy_pre = self.actor_1(x[:, 56:])
+        policy = self.actor_2(torch.cat((policy_move, policy_pre), dim=-1))
         policy *= mask
         dist = Categorical(logits=policy)
 
-        values_move = self.critic_move(x[:, :112])
-        values = self.critic((torch.cat((values_move, x[:, 112:]), dim=-1)))
+        values_move = self.critic_move(x[:, :56].reshape((-1, 4, 14))).flatten(start_dim=1)
+        values_pre = self.critic_1(x[:, 56:])
+        values = self.critic((torch.cat((values_move, values_pre), dim=-1)))
         return dist, torch.squeeze(values)
     
     def actor_forward(self, x, mask):
-        policy_move = self.actor_move(x[:, :112])
-        policy = self.actor(torch.cat((policy_move, x[:, 112:]), dim=-1))
+        policy_move = self.actor_move(x[:, :56].reshape((-1, 4, 14))).flatten(start_dim=1)
+        policy_pre = self.actor_1(x[:, 56:])
+        policy = self.actor_2(torch.cat((policy_move, policy_pre), dim=-1))
         policy *= mask
         dist = Categorical(logits=policy)
         return dist
     
     def critic_forward(self, x):
-        values_move = self.critic_move(x[:, :112])
-        values = self.critic((torch.cat((values_move, x[:, 112:]), dim=-1)))
+        values_move = self.critic_move(x[:, :56].reshape((-1, 4, 14))).flatten(start_dim=1)
+        values_pre = self.critic_1(x[:, 56:])
+        values = self.critic_2((torch.cat((values_move, values_pre), dim=-1)))
         return torch.squeeze(values)
 
 
@@ -130,13 +139,13 @@ class A2CAgentFullTrajectoryUpdate(Player):
                 self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=2.5e-6)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=5e-6)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.03 / np.log(action_space)
+        self.entropy_beta = 0.02 / np.log(action_space)
         self.alpha = 50
         self.embed_battle = None
         self.episode_reward = 0
@@ -147,6 +156,10 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.lambda_scale = self.lambda_scale.float()
         self.gamma_scale = self.gamma_scale.float()
         self.last_action = None
+
+        self.median_max_probs = []
+        self.steps = 0
+        self.cum_train_steps = []
 
         self.model.to(self.device)
     
@@ -171,12 +184,16 @@ class A2CAgentFullTrajectoryUpdate(Player):
             td_lambda_err = self.td_lambda_err(state, action, next_state, rwd, terminal)
             log_probs = dist.log_prob(action)
             actor_losses = -log_probs * td_lambda_err.detach()
-            ent_scale = self.entropy_beta * dist.entropy() * (1 + F.relu(-td_lambda_err.detach()))
-            actor_loss = (actor_losses - ent_scale).mean()
-            critic_loss = td_lambda_err.pow(2).mean()
+            mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
+            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + F.relu(-td_lambda_err.detach()))
+            actor_loss = (actor_losses + ent_scale).mean()
+            critic_loss = td_lambda_err.pow(2).mean()   
             loss = actor_loss + self.alpha * critic_loss
+
+            med_max_prob = torch.median(torch.max(dist.probs, dim=1)[0]).item()
+            self.median_max_probs.append(med_max_prob)
+            self.steps += 1
             if random.random() < 0.01:
-                med_max_prob = torch.median(torch.max(dist.probs, dim=1)[0]).item()
                 print(f'{actor_loss.item():.2E}', f'{critic_loss.item():.2E}', f'{med_max_prob:.2E}')
             
             loss.backward()
@@ -187,7 +204,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         done = False
         state, mask = env.reset()
         one_batch = deque([], maxlen=self.batch_size)
-        train_prob = 0.3
+        train_prob = 0.2
         self.last_action = None
         
         self.model.train()
