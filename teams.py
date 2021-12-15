@@ -275,6 +275,51 @@ IVs: 0 Atk
 - Toxic
 """
 
+psyspam_4 = """
+Alakazam-Mega @ Alakazite
+Ability: Inner Focus
+Level: 50
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Focus Blast
+- Protect
+- Shadow Ball
+
+Tapu Lele @ Terrain Extender
+Ability: Psychic Surge
+Level: 50
+EVs: 252 HP / 204 SpA / 52 Spe
+Modest Nature
+IVs: 0 Atk
+- Moonblast
+- Energy Ball
+- Thunderbolt
+- Nature's Madness
+
+Heatran @ Steelium Z Ability: Flash Fire
+Level: 50
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Flamethrower
+- Flash Cannon
+- Earth Power
+- Will-O-Wisp
+
+Togekiss @ Leftovers
+Ability: Serene Grace
+Level: 50
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Air Slash
+- Follow Me
+- Tailwind
+- Thunder Wave
+"""
+
 random_pokemon_list = ["""
 Weavile @ Heavy-Duty Boots
 Ability: Pressure
