@@ -275,6 +275,128 @@ IVs: 0 Atk
 - Toxic
 """
 
+psyspam_4 = """
+Alakazam @ Life Orb
+Ability: Inner Focus
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Focus Blast
+- Protect
+- Shadow Ball
+
+Tapu Lele @ Terrain Extender
+Ability: Psychic Surge
+EVs: 252 HP / 204 SpA / 52 Spe
+Modest Nature
+IVs: 0 Atk
+- Moonblast
+- Energy Ball
+- Thunderbolt
+- Nature's Madness
+
+Heatran @ Leftovers
+Ability: Flash Fire
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Flamethrower
+- Flash Cannon
+- Earth Power
+- Will-O-Wisp
+
+Togekiss @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Air Slash
+- Follow Me
+- Tailwind
+- Thunder Wave
+"""
+
+trick_room_4 = """
+Hatterene @ Leftovers
+Ability: Magic Bounce
+EVs: 252 HP / 4 Def / 252 SpA
+Quiet Nature
+IVs: 0 Spe
+- Trick Room
+- Psychic
+- Dazzling Gleam
+- Mystical Fire
+
+Runerigus @ Leftovers
+Ability: Wandering Spirit
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Shadow Claw
+- Earthquake
+- Body Press
+- Trick Room
+
+Vikavolt @ Life Orb
+Ability: Levitate
+EVs: 252 HP / 252 SpA / 4 SpD
+Brave Nature
+IVs: 0 Atk
+- Flash Cannon
+- Thunderbolt
+- Bug Buzz
+- Energy Ball
+
+Rhyperior @ Leftovers
+Ability: Solid Rock
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Stealth Rock
+- Earthquake
+- Rock Blast
+- Crunch
+"""
+
+offensive_4 = """
+Mew @ Red Card
+Ability: Synchronize
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Flare Blitz
+- Taunt
+- Spikes
+- Stealth Rock
+
+Rillaboom @ Choice Scarf
+Ability: Grassy Surge
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- U-turn
+- High Horsepower
+- Fake Out
+- Hammer Arm
+
+Hydreigon @ Choice Specs
+Ability: Levitate
+EVs: 80 HP / 176 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Draco Meteor
+- Flamethrower
+- Dark Pulse
+- Roost
+
+Dragonite @ Leftovers
+Ability: Multiscale
+EVs: 244 HP / 8 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Double-Edge
+- Roost
+"""
+
 random_pokemon_list = ["""
 Weavile @ Heavy-Duty Boots
 Ability: Pressure
