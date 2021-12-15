@@ -210,9 +210,9 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(
             battle,
-            fainted_value=1,
-            hp_value=1,
-            victory_value=2,
+            fainted_value=0.25,
+            hp_value=0.1,
+            victory_value=5,
             status_value=0.1,
         )
     
