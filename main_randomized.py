@@ -31,7 +31,7 @@ def main():
     # bf = 'gen8randombattle'
 
     adversarial_train = False
-    num_pokemon_in_team = 4
+    num_pokemon_in_team = 6
     # Initialize agent
     team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
     #team_used = teams.four_team
@@ -94,7 +94,7 @@ def main():
                 opponent=max_dmg_player,
             )
 
-    num_episodes = 20
+    num_episodes = 10
     training_per_episode = 100
 
     train_max_weight = 1

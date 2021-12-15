@@ -252,6 +252,29 @@ Timid Nature
 - Roost
 """
 
+team_blissey = """
+Blissey (M) @ Heavy-Duty Boots
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+- Stealth Rock
+- Soft-Boiled
+- Seismic Toss
+- Toxic
+"""
+
+team_quagsire = """
+Quagsire (M) @ Leftovers
+Ability: Unaware
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
+IVs: 0 Atk
+- Scald
+- Earthquake
+- Recover
+- Toxic
+"""
+
 random_pokemon_list = ["""
 Weavile @ Heavy-Duty Boots
 Ability: Pressure
