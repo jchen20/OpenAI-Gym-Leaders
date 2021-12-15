@@ -34,7 +34,7 @@ def main():
 
     # Initialize agent
     team_used = teams.six_team
-    emb_dim = 315
+    emb_dim = 329
     move_encoder = False
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)

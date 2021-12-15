@@ -36,7 +36,7 @@ def main():
     team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
     #team_used = teams.four_team
     #team_used = random_team(teams.random_pokemon_list,num_pokemon_in_team)
-    emb_dim = 315
+    emb_dim = 329
 
     move_encoder = False
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
