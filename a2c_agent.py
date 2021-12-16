@@ -236,16 +236,20 @@ class A2CAgentFullTrajectoryUpdate(Player):
 
     def td_lambda_err(self, state, action, next_state, reward, terminal):
         n = len(state)
-        lambda_scale = self.lambda_scale[:n]
-        gamma_scale = self.gamma_scale[:n]
+        lambda_scale = torch.repeat_interleave(self.lambda_scale[:n][None, :], n, dim=0)
+        gamma_scale = torch.repeat_interleave(self.gamma_scale[:n][None, :], n, dim=0)
         # prev_values = self.model.critic_forward(state)[range(n), action]
         prev_values = self.model.critic_forward(state)
         next_values = reward
         # next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
         next_values[~terminal] += self.gamma * self.model.critic_forward(next_state[~terminal])
         td_error = next_values - prev_values
-        td_error = td_error * lambda_scale * gamma_scale
-        return td_error
+        td_error_mat = torch.zeros((n, n), device=self.device)
+        for i in range(n):
+            td_error_mat[i, i:n] = td_error[0:(n-i)]
+        td_error_mat = td_error_mat * lambda_scale * gamma_scale
+        td_error_vec = torch.sum(td_error_mat, dim=-1)
+        return td_error_vec
 
     
     def set_embed_battle(self, embed_battle):
