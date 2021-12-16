@@ -158,6 +158,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.last_action = None
 
         self.median_max_probs = []
+        self.actor_losses = []
+        self.critic_losses = []
         self.steps = 0
         self.cum_train_steps = []
 
@@ -192,6 +194,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
 
             med_max_prob = torch.median(torch.max(dist.probs, dim=1)[0]).item()
             self.median_max_probs.append(med_max_prob)
+            self.actor_losses.append(actor_loss.item())
+            self.critic_losses.append(critic_loss.item())
             self.steps += 1
             if random.random() < 0.01:
                 print(f'{actor_loss.item():.2E}', f'{critic_loss.item():.2E}', f'{med_max_prob:.2E}')

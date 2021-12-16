@@ -109,9 +109,8 @@ def main():
     agent_max_dmg_wins = np.zeros(num_episodes, dtype=int)
     agent_heur_wins = np.zeros(num_episodes, dtype=int)
 
-    agent_random_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
-    agent_max_dmg_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
-    agent_heur_rewards = np.zeros(num_episodes*training_per_episode, dtype=float)
+    agent_max_dmg_rewards = np.zeros(num_episodes, dtype=float)
+    agent_heur_rewards = np.zeros(num_episodes, dtype=float)
 
     agent2_random_wins = np.zeros(num_episodes, dtype=int)
     agent2_max_dmg_wins = np.zeros(num_episodes, dtype=int)
@@ -130,8 +129,7 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=max_dmg_player,
                 )
-                if k + 1 == train_max_weight:
-                    agent_max_dmg_rewards[i*training_per_episode + j] = agent.episode_reward
+                agent_max_dmg_rewards[i] = agent.episode_reward
                 agent.episode_reward = 0
             for l in range(train_heuristic_weight):
                 custom_play_against(
@@ -139,17 +137,19 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=heur_player,
                 )
-                if l + 1 == train_heuristic_weight:
-                    agent_heur_rewards[i*training_per_episode + j] = agent.episode_reward
+                agent_heur_rewards[i] = agent.episode_reward
                 agent.episode_reward = 0
             if adversarial_train and i != 0:
                 for m in range(train_self_weight):
-                    custom_train_agents(
+                    custom_play_against(
                         env_player=env_player,
                         env_algorithm=agent.train_one_episode,
-                        opponent=env_player2,
-                        opponent_algorithm=agent2.train_one_episode
+                        opponent=agent2
                     )
+        
+        agent_max_dmg_rewards[i] /= (training_per_episode * train_max_weight)
+        agent_heur_rewards[i] /= (training_per_episode * train_heuristic_weight)
+        agent.cum_train_steps.append(agent.steps)
 
         # Evaluate
         print('\nAgent 1:')
@@ -234,13 +234,30 @@ def main():
     plt.show()
 
     plt.figure()
-    plt.semilogy(trainings, agent_max_dmg_rewards, '-g',
+    plt.semilogy(np.arange(agent.steps), agent.actor_losses, '-g', linewidth=0.1, label='Actor Loss')
+    plt.semilogy(np.arange(agent.steps), agent.critic_losses, '-b', linewidth=0.1, label='Critic Loss')
+    plt.xlabel('Steps')
+    plt.ylabel('Loss')
+    plt.title('Agent Losses Per Step')
+    plt.legend()
+
+    fig, ax1 = plt.subplots()
+    ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', label='Agent Winrate against Heuristic')
+    ax1.set_xlabel('steps')
+    ax1.set_ylabel('win rate')
+    ax2 = ax1.twinx()
+    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.1, label='Median Max Probability Action Choice')
+    ax2.set_ylabel('max action probability')
+    fig.tight_layout()
+
+    plt.figure()
+    plt.plot(episodes, agent_max_dmg_rewards, '-g',
              label="Agent Reward against Max Dmg")
-    plt.semilogy(trainings, agent_heur_rewards, '-r',
+    plt.plot(episodes, agent_heur_rewards, '-r',
              label="Agent Reward against Heuristic")
     plt.xlabel("Episode")
     plt.ylabel("Reward")
-    plt.title("Agent Reward Per Episode")
+    plt.title("Agent Average Reward Per Episode")
     plt.legend()
     plt.show()
 

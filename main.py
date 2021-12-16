@@ -231,12 +231,20 @@ def main():
     plt.title("Agent Wins Per Episode")
     plt.legend()
 
+    plt.figure()
+    plt.semilogy(np.arange(agent.steps), agent.actor_losses, '-g', linewidth=0.1, label='Actor Loss')
+    plt.semilogy(np.arange(agent.steps), agent.critic_losses, '-b', linewidth=0.1, label='Critic Loss')
+    plt.xlabel('Steps')
+    plt.ylabel('Loss')
+    plt.title('Agent Losses Per Step')
+    plt.legend()
+
     fig, ax1 = plt.subplots()
     ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', label='Agent Winrate against Heuristic')
     ax1.set_xlabel('steps')
     ax1.set_ylabel('win rate')
     ax2 = ax1.twinx()
-    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.5, label='Median Max Probability Action Choice')
+    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.1, label='Median Max Probability Action Choice')
     ax2.set_ylabel('max action probability')
     fig.tight_layout()
 
