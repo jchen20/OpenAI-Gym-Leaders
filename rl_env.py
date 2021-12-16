@@ -151,6 +151,11 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             pokemon_types = [t.value for t in pokemon.types if t is not None]
             switch_matrix[i, 7:25] += one_hot(pokemon_types, 18)
         
+        status_arr = np.zeros(7) if battle.active_pokemon.status is None \
+            else one_hot(battle.active_pokemon.status.value, 7)
+        opp_status_arr = np.zeros(7) if battle.opponent_active_pokemon.status is None \
+            else one_hot(battle.opponent_active_pokemon.status.value, 7)
+
         side_conds = battle.side_conditions
         cond_idxs = []
         cond_cts = []
@@ -209,6 +214,8 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             opponent_base_stats_array,
             opponent_boosts_array,
             [remaining_mon_team, remaining_mon_opponent],
+            status_arr,
+            opp_status_arr,
             switch_matrix.flatten(),
             side_cond_arr,
             opp_side_cond_arr,
@@ -223,7 +230,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             battle,
             fainted_value=1,
             hp_value=1,
-            victory_value=4.0,
+            victory_value=2.0,
             status_value=0.1,
         )
     

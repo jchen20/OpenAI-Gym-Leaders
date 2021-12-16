@@ -16,6 +16,8 @@ from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from a2cq_agent import A2CQAgentFullTrajectoryUpdate
+from td3_agent import TD3AgentFullTrajectoryUpdate
+from td3v_agent import TD3VAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
 from utils import set_random_seed, RandomTeamFromPool, random_team
@@ -37,7 +39,7 @@ def main():
     team_used = RandomTeamFromPool(teams.random_pokemon_list,num_pokemon_in_team, reset_team_cycle=10)
     #team_used = teams.four_team
     #team_used = random_team(teams.random_pokemon_list,num_pokemon_in_team)
-    emb_dim = 315
+    emb_dim = 329
 
     move_encoder = False
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
@@ -51,6 +53,14 @@ def main():
                                              battle_format=bf, team=team_used)
     elif method == 'a2cq':
         agent = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                              len(env_player.action_space) - 12,
+                                              battle_format=bf, team=team_used)
+    elif method == 'td3':
+        agent = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                             len(env_player.action_space) - 12,
+                                             battle_format=bf, team=team_used)
+    elif method == 'td3v':
+        agent = TD3VAgentFullTrajectoryUpdate(emb_dim,
                                               len(env_player.action_space) - 12,
                                               battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
@@ -67,6 +77,14 @@ def main():
                                                   battle_format=bf, team=team_used)
         elif method == 'a2cq':
             agent2 = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                                   len(env_player.action_space) - 12,
+                                                   battle_format=bf, team=team_used)
+        elif method == 'td3':
+            agent2 = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                                  len(env_player.action_space) - 12,
+                                                  battle_format=bf, team=team_used)
+        elif method == 'td3v':
+            agent2 = TD3VAgentFullTrajectoryUpdate(emb_dim,
                                                    len(env_player.action_space) - 12,
                                                    battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)

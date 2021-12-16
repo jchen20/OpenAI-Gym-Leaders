@@ -139,17 +139,18 @@ class A2CAgentFullTrajectoryUpdate(Player):
                 self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=5e-6)
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
+        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.02 / np.log(action_space)
+        self.entropy_beta = 0.03 / np.log(action_space)
         self.alpha = 50
         self.embed_battle = None
         self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.device)
 
         self.lambda_scale = torch.tensor([self.gamma**i for i in range(self.batch_size)][::-1], device=self.device)
         self.gamma_scale = torch.tensor([self.gae_lambda**i for i in range(self.batch_size)][::-1], device=self.device)
@@ -187,7 +188,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             log_probs = dist.log_prob(action)
             actor_losses = -log_probs * td_lambda_err.detach()
             mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
-            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + F.relu(-td_lambda_err.detach()))
+            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + 5 * F.relu(-td_lambda_err.detach()))
             actor_loss = (actor_losses + ent_scale).mean()
             critic_loss = td_lambda_err.pow(2).mean()   
             loss = actor_loss + self.alpha * critic_loss

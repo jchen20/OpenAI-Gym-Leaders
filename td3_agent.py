@@ -78,14 +78,14 @@ class TD3AgentFullTrajectoryUpdate(Player):
             self.model = TD3(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=5e-6)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.01 / np.log(action_space)
-        self.alpha = 20
+        self.entropy_beta = 0.03 / np.log(action_space)
+        self.alpha = 50
         self.embed_battle = None
         self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -138,6 +138,8 @@ class TD3AgentFullTrajectoryUpdate(Player):
             if random.random() < 0.01:
                 print(f'{actor_loss.item():.2E}', f'{critic_loss_1.item():.2E}', \
                     f'{critic_loss_2.item():.2E}', f'{med_max_prob:.2E}')
+                print(f'{td_lambda_err_1.mean().item():.2E}', f'{td_lambda_err_2.mean().item():.2E}')
+
             
             loss.backward()
             self.optimizer.step()

@@ -17,6 +17,7 @@ from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
 from a2cq_agent import A2CQAgentFullTrajectoryUpdate
 from td3_agent import TD3AgentFullTrajectoryUpdate
+from td3v_agent import TD3VAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
 from utils import set_random_seed
@@ -24,7 +25,7 @@ import teams
 
 
 def main():
-    method = 'td3'
+    method = 'a2c'
 
     set_random_seed(0)
 
@@ -36,7 +37,7 @@ def main():
 
     # Initialize agent
     team_used = teams.six_team
-    emb_dim = 315
+    emb_dim = 329
     move_encoder = False
 
     env_player = RLEnvPlayer(battle_format=bf, team=team_used)
@@ -56,6 +57,10 @@ def main():
         agent = TD3AgentFullTrajectoryUpdate(emb_dim,
                                              len(env_player.action_space) - 12,
                                              battle_format=bf, team=team_used)
+    elif method == 'td3v':
+        agent = TD3VAgentFullTrajectoryUpdate(emb_dim,
+                                              len(env_player.action_space) - 12,
+                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     if adversarial_train:
@@ -76,6 +81,10 @@ def main():
             agent2 = TD3AgentFullTrajectoryUpdate(emb_dim,
                                                   len(env_player.action_space) - 12,
                                                   battle_format=bf, team=team_used)
+        elif method == 'td3v':
+            agent2 = TD3VAgentFullTrajectoryUpdate(emb_dim,
+                                                   len(env_player.action_space) - 12,
+                                                   battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
@@ -111,12 +120,16 @@ def main():
     #             opponent=max_dmg_player,
     #         )
 
-    num_episodes = 10
+    num_episodes = 20
     training_per_episode = 100
 
-    train_max_weight = 0
-    train_heuristic_weight = 0
-    train_self_weight = 2
+    train_max_weight = 2
+    train_heuristic_weight = 2
+    train_self_weight = 0
+    
+    max_dmg_threshold_1 = 0.6
+    max_dmg_threshold_2 = 0.8
+    heuristic_threshold = 0.3
 
     n_eval_battles = 50
     episodes = np.arange(1, num_episodes + 1)
@@ -137,6 +150,9 @@ def main():
     for i in range(num_episodes):
         print('\n\n-------------------------')
         print(f'Training episode {i}')
+        print(f'max damage: {train_max_weight}')
+        print(f'heuristic: {train_heuristic_weight}')
+        print(f'self: {train_self_weight}')
         if adversarial_train:
             agent2.model = copy.deepcopy(agent.model)
             agent2.force_non_greedy = True
@@ -200,6 +216,19 @@ def main():
         agent_heur_wins[i] = agent.n_won_battles
         print(f'Wins: {agent_heur_wins[i]} out of {n_eval_battles}')
         agent.reset_battles()
+
+        if agent_max_dmg_wins[i] / n_eval_battles > max_dmg_threshold_1:
+            train_max_weight = 1
+            train_heuristic_weight = 3
+            if agent_max_dmg_wins[i] / n_eval_battles > max_dmg_threshold_2 and \
+                agent_heur_wins[i] / n_eval_battles > heuristic_threshold:
+                train_self_weight = 2
+            else:
+                train_self_weight = 1
+        else:
+            train_max_weight = 2
+            train_heuristic_weight = 2
+            train_self_weight = 0
         
         # if adversarial_train:
         #     # Evaluate
