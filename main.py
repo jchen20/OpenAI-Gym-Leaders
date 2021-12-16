@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 import matplotlib.pyplot as plt
-
+from scipy.ndimage.filters import median_filter
 from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
@@ -30,7 +30,7 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversarial_train = True
+    adversarial_train = False
 
     # Initialize agent
     team_used = teams.six_team
@@ -134,7 +134,7 @@ def main():
                     env_algorithm=agent.train_one_episode,
                     opponent=heur_player,
                 )
-                agent_heur_rewards[i] = agent.episode_reward
+                agent_heur_rewards[i] += agent.episode_reward
                 agent.episode_reward = 0
             if adversarial_train:
                 for m in range(train_self_weight):
@@ -232,27 +232,35 @@ def main():
     plt.legend()
 
     plt.figure()
-    plt.semilogy(np.arange(agent.steps), agent.actor_losses, '-g', linewidth=0.1, label='Actor Loss')
-    plt.semilogy(np.arange(agent.steps), agent.critic_losses, '-b', linewidth=0.1, label='Critic Loss')
+    a_loss_smoothed = median_filter(agent.actor_losses, size=51, mode='nearest')
+    c_loss_smoothed = median_filter(agent.critic_losses, size=51, mode='nearest')
+    plt.plot(np.arange(agent.steps), a_loss_smoothed, '-g', linewidth=0.5, label='Actor Loss')
+    plt.plot(np.arange(agent.steps), c_loss_smoothed, '-b', linewidth=0.5, label='Critic Loss')
+    plt.yscale('symlog')
     plt.xlabel('Steps')
     plt.ylabel('Loss')
     plt.title('Agent Losses Per Step')
     plt.legend()
 
     fig, ax1 = plt.subplots()
-    ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', label='Agent Winrate against Heuristic')
+    ln1 = ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', \
+        label='Agent Winrate against Heuristic')[0]
     ax1.set_xlabel('steps')
     ax1.set_ylabel('win rate')
     ax2 = ax1.twinx()
-    ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.1, label='Median Max Probability Action Choice')
+    ln2 = ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.3, \
+        label='Median Max Probability Action Choice')[0]
     ax2.set_ylabel('max action probability')
     fig.tight_layout()
+    ax1.legend([ln1, ln2], [ln1.get_label(), ln2.get_label()])
+    fig.suptitle('Winrate and Probability of Max Action')
+    plt.subplots_adjust(top=0.92)
 
     plt.figure()
     plt.plot(episodes, agent_max_dmg_rewards, '-g',
-             label="Agent Reward against Max Dmg")
+             label="Agent Avg Reward against Max Dmg")
     plt.plot(episodes, agent_heur_rewards, '-r',
-             label="Agent Reward against Heuristic")
+             label="Agent Avg Reward against Heuristic")
     plt.xlabel("Episode")
     plt.ylabel("Reward")
     plt.title("Agent Average Reward Per Episode")

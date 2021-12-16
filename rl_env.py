@@ -230,7 +230,7 @@ class RLEnvPlayer(Gen8EnvSinglePlayer):
             battle,
             fainted_value=1,
             hp_value=1,
-            victory_value=7.5,
+            victory_value=2.0,
             status_value=0.1,
         )
     
