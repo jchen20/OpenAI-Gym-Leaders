@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 import matplotlib.pyplot as plt
-from scipy.ndimage.filters import median_filter
+from scipy.ndimage.filters import median_filter, uniform_filter1d
 from poke_env.data import to_id_str
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.random_player import RandomPlayer
@@ -248,7 +248,8 @@ def main():
     ax1.set_xlabel('steps')
     ax1.set_ylabel('win rate')
     ax2 = ax1.twinx()
-    ln2 = ax2.plot(np.arange(agent.steps), agent.median_max_probs, '-k', linewidth=0.3, \
+    moving_avg_meds = uniform_filter1d(agent.median_max_probs, 20)
+    ln2 = ax2.plot(np.arange(agent.steps), moving_avg_meds, '-k', linewidth=0.3, \
         label='Median Max Probability Action Choice')[0]
     ax2.set_ylabel('max action probability')
     fig.tight_layout()
