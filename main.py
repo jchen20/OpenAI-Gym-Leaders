@@ -30,7 +30,7 @@ def main():
     bf = "gen8ou"
     # bf = 'gen8randombattle'
 
-    adversarial_train = False
+    adversarial_train = True
 
     # Initialize agent
     team_used = teams.six_team
@@ -230,17 +230,19 @@ def main():
     plt.ylabel("Number of Wins")
     plt.title("Agent Wins Per Episode")
     plt.legend()
+    plt.savefig('winrate.png', bbox_inches='tight')
 
     plt.figure()
     a_loss_smoothed = median_filter(agent.actor_losses, size=51, mode='nearest')
     c_loss_smoothed = median_filter(agent.critic_losses, size=51, mode='nearest')
     plt.plot(np.arange(agent.steps), a_loss_smoothed, '-g', linewidth=0.5, label='Actor Loss')
     plt.plot(np.arange(agent.steps), c_loss_smoothed, '-b', linewidth=0.5, label='Critic Loss')
-    plt.yscale('symlog')
+    plt.yscale('symlog', linthresh=0.01)
     plt.xlabel('Steps')
     plt.ylabel('Loss')
     plt.title('Agent Losses Per Step')
     plt.legend()
+    plt.savefig('loss.png', bbox_inches='tight')
 
     fig, ax1 = plt.subplots()
     ln1 = ax1.plot(agent.cum_train_steps, agent_heur_wins / n_eval_battles, '-r', \
@@ -256,6 +258,7 @@ def main():
     ax1.legend([ln1, ln2], [ln1.get_label(), ln2.get_label()])
     fig.suptitle('Winrate and Probability of Max Action')
     plt.subplots_adjust(top=0.92)
+    plt.savefig('maxprob.png', bbox_inches='tight')
 
     plt.figure()
     plt.plot(episodes, agent_max_dmg_rewards, '-g',
@@ -266,6 +269,7 @@ def main():
     plt.ylabel("Reward")
     plt.title("Agent Average Reward Per Episode")
     plt.legend()
+    plt.savefig('reward.png', bbox_inches='tight')
     plt.show()
 
 
