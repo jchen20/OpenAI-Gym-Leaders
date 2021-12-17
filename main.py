@@ -233,8 +233,8 @@ def main():
     plt.savefig('winrate.png', bbox_inches='tight')
 
     plt.figure()
-    a_loss_smoothed = median_filter(agent.actor_losses, size=51, mode='nearest')
-    c_loss_smoothed = median_filter(agent.critic_losses, size=51, mode='nearest')
+    a_loss_smoothed = median_filter(agent.actor_losses, size=151, mode='nearest')
+    c_loss_smoothed = median_filter(agent.critic_losses, size=151, mode='nearest')
     plt.plot(np.arange(agent.steps), a_loss_smoothed, '-g', linewidth=0.5, label='Actor Loss')
     plt.plot(np.arange(agent.steps), c_loss_smoothed, '-b', linewidth=0.5, label='Critic Loss')
     plt.yscale('symlog', linthresh=0.01)
@@ -252,7 +252,7 @@ def main():
     ax2 = ax1.twinx()
     moving_avg_meds = uniform_filter1d(agent.median_max_probs, 20)
     ln2 = ax2.plot(np.arange(agent.steps), moving_avg_meds, '-k', linewidth=0.3, \
-        label='Median Max Probability Action Choice')[0]
+        label='Moving Average of Median Max Probability Action Choice')[0]
     ax2.set_ylabel('max action probability')
     fig.tight_layout()
     ax1.legend([ln1, ln2], [ln1.get_label(), ln2.get_label()])
