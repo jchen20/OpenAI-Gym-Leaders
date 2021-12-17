@@ -140,7 +140,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         self.state_size = state_size
         self.action_space = action_space
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
-        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.995)
+        self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -187,7 +187,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             log_probs = dist.log_prob(action)
             actor_losses = -log_probs * td_lambda_err.detach()
             mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
-            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + F.relu(-td_lambda_err.detach()))
+            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + 5 * F.relu(-td_lambda_err.detach()))
             actor_loss = (actor_losses + ent_scale).mean()
             critic_loss = td_lambda_err.pow(2).mean()   
             loss = actor_loss + self.alpha * critic_loss
