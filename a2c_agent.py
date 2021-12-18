@@ -184,13 +184,13 @@ class A2CAgentFullTrajectoryUpdate(Player):
         with torch.set_grad_enabled(True):
             self.optimizer.zero_grad()
             dist = self.model.actor_forward(state, mask)
-            td_lambda_err, td_err = self.td_lambda_err(state, action, next_state, rwd, terminal)
+            td_lambda_err = self.td_lambda_err(state, action, next_state, rwd, terminal)
             log_probs = dist.log_prob(action)
             actor_losses = -log_probs * td_lambda_err.detach()
             mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
             ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + 0 * F.relu(-td_lambda_err.detach()))
             actor_loss = (actor_losses + ent_scale).mean()
-            critic_loss = td_err.pow(2).mean()
+            critic_loss = td_lambda_err.pow(2).mean()
             loss = actor_loss + self.alpha * critic_loss
 
             med_max_prob = torch.median(torch.max(dist.probs, dim=1)[0]).item()
@@ -254,13 +254,14 @@ class A2CAgentFullTrajectoryUpdate(Player):
         next_values = reward
         # next_values[~terminal] += self.gamma * torch.max(self.model.critic_forward(next_state[~terminal]), dim=1)[0]
         next_values[~terminal] += self.gamma * self.model.critic_forward(next_state[~terminal])
-        td_error = next_values - prev_values
+        td_error = next_values.detach() - prev_values
         td_error_mat = torch.zeros((n, n), device=self.device)
         for i in range(n):
-            td_error_mat[i, i:n] = td_error[0:(n-i)]
+            td_error_mat[i, i:(n-1)] = td_error[0:(n-i-1)].detach()
+            td_error_mat[i, n-1] = td_error[n-i]
         td_error_mat = td_error_mat * lambda_scale * gamma_scale
         td_error_vec = torch.sum(td_error_mat, dim=-1)
-        return td_error_vec, td_error
+        return td_error_vec
 
     
     def set_embed_battle(self, embed_battle):
