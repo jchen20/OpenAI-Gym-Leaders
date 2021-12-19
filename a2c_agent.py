@@ -127,7 +127,7 @@ class A2CMove(nn.Module):
 
 
 class A2CAgentFullTrajectoryUpdate(Player):
-    def __init__(self, state_size, action_space, batch_size=32, gamma=0.99, gae_lambda=0.5, model=None,
+    def __init__(self, state_size, action_space, batch_size=8, gamma=0.99, gae_lambda=0.3, model=None,
                  move_encoder=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if model:
@@ -139,14 +139,14 @@ class A2CAgentFullTrajectoryUpdate(Player):
                 self.model = A2C(state_size + action_space, action_space)
         self.state_size = state_size
         self.action_space = action_space
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=5e-5)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda _: 0.999)
         self.batch_size = batch_size # batch size is max horizon
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.eps = 0.1
-        self.entropy_beta = 0.0 / np.log(action_space)
-        self.alpha = 2
+        self.entropy_beta = 0.03 / np.log(action_space)
+        self.alpha = 10
         self.embed_battle = None
         self.episode_reward = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -188,7 +188,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
             log_probs = dist.log_prob(action)
             actor_losses = -log_probs * td_lambda_err.detach()
             mask_dist = Categorical((mask + 1e-10) / torch.sum(mask, dim=1, keepdim=True))
-            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + 0 * F.relu(-td_lambda_err.detach()))
+            ent_scale = self.entropy_beta * kl_divergence(dist, mask_dist) * (1 + 5 * F.relu(-td_lambda_err.detach()))
             actor_loss = (actor_losses + ent_scale).mean()
             critic_loss = td_lambda_err.pow(2).mean()
             loss = actor_loss + self.alpha * critic_loss
@@ -197,7 +197,8 @@ class A2CAgentFullTrajectoryUpdate(Player):
             self.median_max_probs.append(med_max_prob)
             self.steps += 1
             if random.random() < 0.01:
-                print(f'{actor_loss.item():.2E}', f'{critic_loss.item():.2E}', f'{med_max_prob:.2E}')
+                print(f'{actor_losses.mean().item():.2E}', f'{critic_loss.item():.2E}', f'{med_max_prob:.2E}')
+                print(f'{td_lambda_err.mean().item():.2E}, {ent_scale.mean().item():.2E}')
             
             loss.backward()
             self.optimizer.step()
@@ -258,7 +259,7 @@ class A2CAgentFullTrajectoryUpdate(Player):
         td_error_mat = torch.zeros((n, n), device=self.device)
         for i in range(n):
             td_error_mat[i, i:(n-1)] = td_error[0:(n-i-1)].detach()
-            td_error_mat[i, n-1] = td_error[n-i]
+            td_error_mat[i, n-1] = td_error[n-i-1]
         td_error_mat = td_error_mat * lambda_scale * gamma_scale
         td_error_vec = torch.sum(td_error_mat, dim=-1)
         return td_error_vec

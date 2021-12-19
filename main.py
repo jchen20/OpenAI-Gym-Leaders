@@ -121,7 +121,7 @@ def main():
     #         )
 
     num_episodes = 20
-    training_per_episode = 100
+    training_per_episode = 50
 
     train_max_weight = 2
     train_heuristic_weight = 2
