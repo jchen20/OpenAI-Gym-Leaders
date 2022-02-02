@@ -15,6 +15,9 @@ from poke_env.player.battle_order import BattleOrder
 from rl_env import RLEnvPlayer
 from dqn_agent import DQNAgent
 from a2c_agent import A2CAgentFullTrajectoryUpdate
+from a2cq_agent import A2CQAgentFullTrajectoryUpdate
+from td3_agent import TD3AgentFullTrajectoryUpdate
+from td3v_agent import TD3VAgentFullTrajectoryUpdate
 from networking import custom_play_against, battle_against_wrapper, \
     evaluate_model, custom_train_agents
 from utils import set_random_seed, RandomTeamFromPool, random_team
@@ -22,7 +25,7 @@ import teams
 
 
 def main():
-    method = 'a2c'
+    method = 'td3'
 
     set_random_seed(0)
 
@@ -43,11 +46,23 @@ def main():
     if method == 'dqn':
         agent = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                          battle_format=bf, team=team_used)
-    else:
+    elif method == 'a2c':
         agent = A2CAgentFullTrajectoryUpdate(emb_dim,
                                              len(env_player.action_space) - 12,
                                              move_encoder=move_encoder,
                                              battle_format=bf, team=team_used)
+    elif method == 'a2cq':
+        agent = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                              len(env_player.action_space) - 12,
+                                              battle_format=bf, team=team_used)
+    elif method == 'td3':
+        agent = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                             len(env_player.action_space) - 12,
+                                             battle_format=bf, team=team_used)
+    elif method == 'td3v':
+        agent = TD3VAgentFullTrajectoryUpdate(emb_dim,
+                                              len(env_player.action_space) - 12,
+                                              battle_format=bf, team=team_used)
     agent.set_embed_battle(env_player.embed_battle)
 
     if adversarial_train:
@@ -55,9 +70,23 @@ def main():
         if method == 'dqn':
             agent2 = DQNAgent(emb_dim, len(env_player.action_space) - 12,
                               battle_format=bf, team=team_used)
-        else:
-            agent2 = A2CAgentFullTrajectoryUpdate(emb_dim, len(
-                env_player.action_space) - 12, move_encoder=move_encoder, battle_format=bf, team=team_used)
+        elif method == 'a2c':
+            agent2 = A2CAgentFullTrajectoryUpdate(emb_dim,
+                                                  len(env_player.action_space) - 12,
+                                                  move_encoder=move_encoder,
+                                                  battle_format=bf, team=team_used)
+        elif method == 'a2cq':
+            agent2 = A2CQAgentFullTrajectoryUpdate(emb_dim,
+                                                   len(env_player.action_space) - 12,
+                                                   battle_format=bf, team=team_used)
+        elif method == 'td3':
+            agent2 = TD3AgentFullTrajectoryUpdate(emb_dim,
+                                                  len(env_player.action_space) - 12,
+                                                  battle_format=bf, team=team_used)
+        elif method == 'td3v':
+            agent2 = TD3VAgentFullTrajectoryUpdate(emb_dim,
+                                                   len(env_player.action_space) - 12,
+                                                   battle_format=bf, team=team_used)
         agent2.set_embed_battle(env_player2.embed_battle)
 
     # Initialize random player
@@ -121,6 +150,7 @@ def main():
         print(f'Training episode {i}')
         if adversarial_train:
             agent2.model = copy.deepcopy(agent.model)
+            agent2.force_non_greedy = True
         # Train env_player
         for j in range(training_per_episode):
             for k in range(train_max_weight):
@@ -139,7 +169,7 @@ def main():
                 )
                 agent_heur_rewards[i] = agent.episode_reward
                 agent.episode_reward = 0
-            if adversarial_train and i != 0:
+            if adversarial_train:
                 for m in range(train_self_weight):
                     custom_play_against(
                         env_player=env_player,
